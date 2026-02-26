@@ -6,9 +6,9 @@ Stashly is a modern offline‑first inventory management system built with **Ele
 
 _Sample screens – replace with actual images of your application._
 
-![Dashboard](https://via.placeholder.com/800x450?text=Dashboard+Preview)
-![Inventory List](https://via.placeholder.com/800x450?text=Inventory+List)
-![Reports](https://via.placeholder.com/800x450?text=Reports+Page)
+![Dashboard](https://github.com/CyberArcenal/Stashly/blob/main/screenshots/1.png?raw=true)
+![Inventory List](https://github.com/CyberArcenal/Stashly/blob/main/screenshots/2.png?raw=true)
+![Reports](https://github.com/CyberArcenal/Stashly/blob/main/screenshots/4.png?raw=true)
 
 ## 🚀 Features
 

@@ -219,7 +219,10 @@ class ProductExportHandler {
       .where("pv.productId = p.id")
       .getQuery();
 
-    // Build main query
+    // ✅ Raw EXISTS expression (no double parentheses)
+    const lowStockExists = `EXISTS(SELECT 1 FROM "stock_items" "si" WHERE "si"."productId" = "p"."id" AND "si"."quantity" < "si"."low_stock_threshold" AND "si"."low_stock_threshold" IS NOT NULL)`;
+
+    // Build main query – note: p.low_stock_threshold is REMOVED
     const queryBuilder = productRepo
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.category", "c")
@@ -231,13 +234,13 @@ class ProductExportHandler {
         "p.net_price",
         "p.cost_per_item",
         "p.is_published",
-        "p.low_stock_threshold",
         "p.allow_backorder",
         "p.track_quantity",
       ])
       .addSelect(`(${variantCountSubQuery})`, "variants_count")
       .addSelect(`(${productStockSubQuery})`, "product_stock")
       .addSelect(`(${variantStockSubQuery})`, "variant_stock")
+      .addSelect(lowStockExists, "has_low_stock") // ✅ corrected
       .where("p.is_deleted = 0");
 
     // Apply filters
@@ -246,7 +249,6 @@ class ProductExportHandler {
         categoryId: params.category,
       });
     }
-
     if (params.status) {
       if (params.status === "published") {
         queryBuilder.andWhere("p.is_published = 1");
@@ -254,7 +256,6 @@ class ProductExportHandler {
         queryBuilder.andWhere("p.is_published = 0");
       }
     }
-
     if (params.search) {
       const searchTerm = `%${params.search}%`;
       queryBuilder.andWhere(
@@ -267,19 +268,19 @@ class ProductExportHandler {
 
     const products = await queryBuilder.getRawMany();
 
-    // Process products to match original output
+    // Process results
     const processedProducts = [];
     for (const product of products) {
       const totalQuantity =
         (parseInt(product.product_stock) || 0) +
         (parseInt(product.variant_stock) || 0);
-      const lowStock = totalQuantity <= (product.p_low_stock_threshold || 0);
+      const lowStockFlag = !!parseInt(product.has_low_stock); // 1 → true, 0 → false
 
       // Determine status
       let status = "In Stock";
       if (totalQuantity === 0) {
         status = product.p_allow_backorder ? "Backorder" : "Out of Stock";
-      } else if (lowStock) {
+      } else if (lowStockFlag) {
         status = "Low Stock";
       }
 
@@ -299,7 +300,7 @@ class ProductExportHandler {
       });
     }
 
-    // Apply low stock filter after processing
+    // Apply low‑stock filter if requested
     let filteredProducts = processedProducts;
     if (params.low_stock === "true") {
       filteredProducts = processedProducts.filter(
@@ -565,7 +566,6 @@ class ProductExportHandler {
         doc.fontSize(11).text("No products found.", { align: "center" });
         doc.end();
         await new Promise((resolve, reject) => {
-          // @ts-ignore
           writeStream.on("finish", resolve);
           writeStream.on("error", reject);
         });
@@ -586,7 +586,6 @@ class ProductExportHandler {
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
       // Define column widths as percentages of available width
-      // Total of 9 columns - optimized for compactness
       const columnWidths = [
         availableWidth * 0.12, // SKU (12%)
         availableWidth * 0.25, // Name (25%)
@@ -599,14 +598,14 @@ class ProductExportHandler {
         availableWidth * 0.1, // Variants Count (10%)
       ];
 
-      const rowHeight = 15; // Reduced row height for compactness
+      const rowHeight = 15;
       let currentY = topMargin;
       const headers = Object.keys(products[0]);
 
       // Draw header row with background
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
-        .fillColor("#4A6FA5") // Blue header
+        .fillColor("#4A6FA5")
         .fill();
 
       doc.fillColor("white").fontSize(8).font("Helvetica-Bold");
@@ -661,16 +660,16 @@ class ProductExportHandler {
         if (i % 2 === 0) {
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
-            .fillColor("#F8F9FA") // Light gray for even rows
+            .fillColor("#F8F9FA")
             .fill();
         } else {
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
-            .fillColor("#FFFFFF") // White for odd rows
+            .fillColor("#FFFFFF")
             .fill();
         }
 
-        // Draw cell borders (thin lines)
+        // Draw cell borders
         doc.lineWidth(0.2);
         xPos = leftMargin;
         for (let j = 0; j < columnWidths.length; j++) {
@@ -681,7 +680,6 @@ class ProductExportHandler {
             .stroke();
           xPos += columnWidths[j];
         }
-        // Bottom border
         doc
           .moveTo(leftMargin, currentY + rowHeight)
           .lineTo(leftMargin + availableWidth, currentY + rowHeight)
@@ -689,20 +687,18 @@ class ProductExportHandler {
           .stroke();
 
         // Draw cell content
-        doc.fillColor("#000000"); // Black text
+        doc.fillColor("#000000");
         xPos = leftMargin;
 
         headers.forEach((header, j) => {
           let cellValue = String(product[header]);
 
-          // Truncate text if too long
           if (header === "Name" && cellValue.length > 30) {
             cellValue = cellValue.substring(0, 27) + "...";
           } else if (header === "Category" && cellValue.length > 15) {
             cellValue = cellValue.substring(0, 12) + "...";
           }
 
-          // Format currency values
           if (
             (header === "Net Price" || header === "Cost") &&
             cellValue !== "N/A"
@@ -721,14 +717,14 @@ class ProductExportHandler {
         currentY += rowHeight;
       }
 
-      // Add footer with page number
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      // ✅ FIXED: Add footer with correct 1‑based page numbers
+      const totalPages = doc.bufferedPageRange().count;
+      for (let page = 1; page <= totalPages; page++) {
+        doc.switchToPage(page);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${i + 1} of ${pageCount}`, leftMargin, pageHeight - 15, {
+          .text(`Page ${page} of ${totalPages}`, leftMargin, pageHeight - 15, {
             align: "right",
             width: availableWidth,
           });
@@ -739,7 +735,6 @@ class ProductExportHandler {
 
       // Wait for write to complete
       await new Promise((resolve, reject) => {
-        // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
@@ -753,7 +748,7 @@ class ProductExportHandler {
       };
     } catch (error) {
       console.error("PDF export error:", error);
-      // Fallback to CSV
+      // Fallback to CSV (optional – you may remove this if you want the error to propagate)
       return await this._exportCSV(products, params);
     }
   }

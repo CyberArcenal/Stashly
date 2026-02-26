@@ -822,6 +822,7 @@ function registerIpcHandlers() {
       "./ipc/exports/stockMovement/index.ipc.js",
       "./ipc/exports/supplier/index.ipc.js",
       "./ipc/exports/warehouse/index.ipc.js",
+      "./ipc/utils/handlers/fileHandler.js",
     ];
 
     ipcModules.forEach((modulePath) => {

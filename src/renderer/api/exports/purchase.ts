@@ -1,8 +1,8 @@
 // src/lib/purchaseExportApi.ts - Purchase Export API Interfaces
 
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 export interface PurchaseBasic {
   id: number;
@@ -130,7 +130,7 @@ class PurchaseExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Purchases exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Purchases exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

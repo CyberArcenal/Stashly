@@ -16,7 +16,6 @@ const Purchase = new EntitySchema({
     tax_amount: { type: Number, default: 0, nullable: false },
     total: { type: Number, default: 0, nullable: false },
     notes: { type: String, nullable: true },
-    inventory_processed: { type: Boolean, default: false, nullable: false },
     is_received: { type: Boolean, default: false, nullable: false },
     received_at: { type: Date, nullable: true },
     proceed_by: { type: Number, nullable: true }, // user ID

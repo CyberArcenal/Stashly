@@ -1,8 +1,8 @@
 // src/lib/productExportApi.ts - Product Export API Interfaces
 
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
+import { formatCurrency } from "../../utils/formatters";
 import { fileHandler } from "./fileHandler";
-import { formatCurrency } from "@/renderer/utils/formatters";
 
 export interface ProductBasic {
   id: number;

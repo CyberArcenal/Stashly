@@ -1,9 +1,8 @@
 // src/lib/orderExportApi.ts - Order Export API Interfaces
-
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
+import { formatCurrency } from "../../utils/formatters";
 import { fileHandler } from "./fileHandler";
-import { ExportResult } from "./product";
-import { formatCurrency } from "@/renderer/utils/formatters";
+import type { ExportResult } from "./product";
 
 export interface OrderBasic {
   id: number;
@@ -110,7 +109,7 @@ class OrderExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Orders exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Orders exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

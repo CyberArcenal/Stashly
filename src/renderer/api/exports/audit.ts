@@ -1,8 +1,8 @@
 // src/lib/auditExportApi.ts - Audit Log Export API Interfaces
 
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 export interface AuditLogBasic {
   id: number;

@@ -1,8 +1,8 @@
 // src/lib/inventoryExportApi.ts - Inventory Export API Interfaces
 
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 export interface InventoryItem {
   id: number;
@@ -162,7 +162,7 @@ class InventoryExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Inventory report exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Inventory report exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

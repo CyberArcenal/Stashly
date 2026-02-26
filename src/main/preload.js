@@ -31,7 +31,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
   // Orders
   orderLog: (payload) => ipcRenderer.invoke("orderLog", payload),
   orderItem: (payload) => ipcRenderer.invoke("orderItem", payload),
-  orders: (payload) => ipcRenderer.invoke("orders", payload),
+  order: (payload) => ipcRenderer.invoke("order", payload),
 
   // Reports
   salesReport: (payload) => ipcRenderer.invoke("salesReport", payload),

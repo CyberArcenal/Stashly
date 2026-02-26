@@ -1,8 +1,8 @@
 // src/lib/logExportApi.ts - Inventory Log Export API Interfaces
 
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 // Inventory Log Interfaces
 export interface InventoryLogBasic {
@@ -131,7 +131,7 @@ class LogExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Inventory logs exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Inventory logs exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

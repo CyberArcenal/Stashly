@@ -31,7 +31,6 @@ export interface Purchase {
   tax_amount: number;
   total: number;
   notes: string | null;
-  inventory_processed: boolean;
   is_received: boolean;
   received_at: string | null;   // ISO date string
   proceed_by: number | null;    // user ID

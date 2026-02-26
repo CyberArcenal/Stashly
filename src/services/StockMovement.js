@@ -153,6 +153,9 @@ class StockMovementService {
       const qb = repo.createQueryBuilder("movement")
         .leftJoinAndSelect("movement.stockItem", "stockItem")
         .leftJoinAndSelect("movement.warehouse", "warehouse")
+        .leftJoinAndSelect("stockItem.product", "product")
+        .leftJoinAndSelect("stockItem.warehouse", "location")
+        .leftJoinAndSelect("stockItem.variant", "productVariant")
         .where("movement.is_deleted = :isDeleted", { isDeleted: false });
 
       if (options.stockItemId) {

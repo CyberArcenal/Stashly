@@ -6,6 +6,14 @@ import ProductsPage from "../pages/products";
 import PageNotFound from "../components/Shared/PageNotFound";
 import ActivationPage from "../pages/activation/pages/Index";
 import VariantsPage from "../pages/productVariant";
+import CategoriesPage from "../pages/categories";
+import SalesPage from "../pages/orders";
+import PurchasesPage from "../pages/purchases";
+import WarehousesPage from "../pages/warehouse";
+import StockItemsPage from "../pages/stock-items";
+import StockMovementsPage from "../pages/stock-movements";
+import StockAdjustmentPage from "../pages/stock-adjustment";
+import StockTransferPage from "../pages/stock-transfer";
 
 const PlaceholderPage = ({ name }: { name: string }) => <div>{name} Page</div>;
 
@@ -22,16 +30,16 @@ function App() {
         {/* Core */}
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/variants" element={<VariantsPage/>} />
-        <Route path="/products/categories" element={<PlaceholderPage name="Categories" />} />
-        <Route path="/orders" element={<PlaceholderPage name="Sales" />} />
-        <Route path="/purchases" element={<PlaceholderPage name="Purchases" />} />
+        <Route path="/products/categories" element={<CategoriesPage/>} />
+        <Route path="/orders" element={<SalesPage/>} />
+        <Route path="/purchases" element={<PurchasesPage/>} />
 
         {/* Inventory */}
-        <Route path="/locations" element={<PlaceholderPage name="Locations" />} />
-        <Route path="/stock-items" element={<PlaceholderPage name="Stock Items" />} />
-        <Route path="/stock-movements" element={<PlaceholderPage name="Stock Movements" />} />
-        <Route path="/inventory/adjustments" element={<PlaceholderPage name="Stock Adjustments" />} />
-        <Route path="/inventory/transfers" element={<PlaceholderPage name="Stock Transfers" />} />
+        <Route path="/locations" element={<WarehousesPage />} />
+        <Route path="/stock-items" element={<StockItemsPage/>} />
+        <Route path="/stock-movements" element={<StockMovementsPage />} />
+        <Route path="/inventory/adjustments" element={<StockAdjustmentPage/>} />
+        <Route path="/inventory/transfers" element={<StockTransferPage/>} />
 
         {/* Analytics */}
         <Route path="/reports/sales" element={<PlaceholderPage name="Sales Reports" />} />

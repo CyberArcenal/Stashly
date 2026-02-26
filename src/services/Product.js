@@ -1,5 +1,5 @@
 // services/ProductService.js
-
+//@ts-check
 const auditLogger = require("../utils/auditLogger");
 
 
@@ -235,6 +235,7 @@ class ProductService {
    * @param {string} user
    */
   async updateStock(productId, warehouseId, quantityChange, movementType, referenceCode, reason = null, user = "system") {
+    const { saveDb, updateDb, removeDb } = require("../utils/dbUtils/dbActions");
     const { product: productRepo, stockItem: stockItemRepo, stockMovement: movementRepo } = await this.getRepositories();
 
     try {

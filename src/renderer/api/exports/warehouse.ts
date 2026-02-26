@@ -1,8 +1,8 @@
 // src/lib/warehouseExportApi.ts - Warehouse Export API Interfaces
 
-import { dialogs } from "@/renderer/utils/dialogs";
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 export interface WarehouseBasic {
   id: number;
@@ -130,7 +130,7 @@ class WarehouseExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Warehouses exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Warehouses exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

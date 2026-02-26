@@ -1,8 +1,9 @@
 // src/lib/stockMovementExportApi.ts - Stock Movement Export API Interfaces
 
-import { UserNestedData } from "../user";
+
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { dialogs } from "@/renderer/utils/dialogs";
+
 
 // Stock Movement Interfaces
 export interface StockMovementBasic {
@@ -42,7 +43,6 @@ export interface StockMovementExportData {
   warehouse: string;
   warehouse_location: string;
   created_by: string;
-  created_by_data: UserNestedData;
   reference_code: string;
   reason: string;
   created_at: string;
@@ -131,7 +131,7 @@ class StockMovementExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Stock movements exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Stock movements exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

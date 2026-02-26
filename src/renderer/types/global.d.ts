@@ -25,7 +25,7 @@ export interface backendAPI {
   outOfStock: (payload: any) => Promise<any>;
   orderLogs: (payload: any) => Promise<any>;
   orderItems: (payload: any) => Promise<any>;
-  orders: (payload: any) => Promise<any>;
+  order: (payload: any) => Promise<any>;
   notifications: (payload: any) => Promise<any>;
   lowStock: (payload: any) => Promise<any>;
   inventorySettings: (payload: any) => Promise<any>;

@@ -125,9 +125,9 @@ module.exports = async (params, queryRunner, user = "system") => {
       stockItem: sourceItem,
       warehouse: sourceItem.warehouse,
       change: -quantity,
-      movement_type: 'transfer_out',
+      movement_type: "transfer_out",
       reference_code: `TRANSFER-${sourceId}-${destId}`,
-      reason: params.reason || 'Stock transfer',
+      reason: params.reason || "Stock transfer",
       metadata: JSON.stringify({ destinationStockItemId: destId }),
       current_quantity: sourceItem.quantity,
       created_at: new Date(),
@@ -139,10 +139,14 @@ module.exports = async (params, queryRunner, user = "system") => {
       stockItem: destItem,
       warehouse: destItem.warehouse,
       change: quantity,
-      movement_type: 'transfer_in',
+      movement_type: "transfer_in",
       reference_code: `TRANSFER-${sourceId}-${destId}`,
-      reason: params.reason || 'Stock transfer',
-      metadata: JSON.stringify({ sourceStockItemId: sourceId }),
+      reason: params.reason || "Stock transfer",
+      metadata: JSON.stringify({
+        sourceStockItemId: sourceId,
+        to_warehouse_id: destItem.warehouse.id,
+        from_warehouse_id: sourceItem.warehouse.id,
+      }),
       current_quantity: destItem.quantity,
       created_at: new Date(),
       updated_at: new Date(),
@@ -150,8 +154,22 @@ module.exports = async (params, queryRunner, user = "system") => {
     await saveDb(movementRepo, destMovement);
 
     // Log audit
-    await auditLogger.logUpdate("StockItem", sourceId, oldSource, sourceItem, user, queryRunner);
-    await auditLogger.logUpdate("StockItem", destId, oldDest, destItem, user, queryRunner);
+    await auditLogger.logUpdate(
+      "StockItem",
+      sourceId,
+      oldSource,
+      sourceItem,
+      user,
+      queryRunner,
+    );
+    await auditLogger.logUpdate(
+      "StockItem",
+      destId,
+      oldDest,
+      destItem,
+      user,
+      queryRunner,
+    );
 
     return {
       status: true,

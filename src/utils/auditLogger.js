@@ -188,6 +188,8 @@ class AuditLogger {
    * @param {string} [actor]
    */
   async logView(entity, entityId, actor) {
+    return;
+    
     return this.log({ action: "VIEW", entity, entityId, actor });
   }
 

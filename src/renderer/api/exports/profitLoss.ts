@@ -1,8 +1,8 @@
 // src/lib/profitLossExportApi.ts - Profit & Loss Export API Interfaces
 
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { dialogs } from "@/renderer/utils/dialogs";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 export interface ProfitLossMonthlyData {
   month: string;
@@ -124,7 +124,7 @@ class ProfitLossExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Profit & Loss report exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Profit & Loss report exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

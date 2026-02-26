@@ -134,7 +134,7 @@ class SupplierService {
       }
 
       const suppliers = await qb.getMany();
-      await auditLogger.logView("Supplier", null, "system");
+      // await auditLogger.logView("Supplier", null, "system");
       return suppliers;
     } catch (error) {
       console.error("Failed to fetch suppliers:", error);

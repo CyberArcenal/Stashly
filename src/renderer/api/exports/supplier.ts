@@ -1,8 +1,8 @@
 // src/lib/supplierExportApi.ts - Supplier Export API Interfaces
 
+import { dialogs } from "../../utils/dialogs";
 import { fileHandler } from "./fileHandler";
-import { dialogs } from "@/renderer/utils/dialogs";
-import { ExportResult } from "./product";
+import type { ExportResult } from "./product";
 
 export interface SupplierBasic {
   id: number;
@@ -117,7 +117,7 @@ class SupplierExportAPI {
         const shouldOpen = await dialogs.confirm({
           title: "Export Successful!",
           message:
-            `Suppliers exported successfully in ${params.format.toUpperCase()} format.\n\n` +
+            `Suppliers exported successfully in ${params.format?.toUpperCase()} format.\n\n` +
             `File: ${fileInfo.filename}\nLocation: ${fileInfo.fullPath}\n\n` +
             `Do you want to open the file now?`,
           confirmText: "Open File",

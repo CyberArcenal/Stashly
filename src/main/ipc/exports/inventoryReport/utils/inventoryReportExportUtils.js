@@ -19,6 +19,7 @@ let currency = "$";
     // @ts-ignore
     console.warn(
       "Failed to load currency sign, using default $",
+      // @ts-ignore
       error.message,
     );
   }
@@ -49,6 +50,7 @@ try {
   // @ts-ignore
   console.warn(
     "ExcelJS not available for enhanced Excel export:",
+    // @ts-ignore
     error.message,
   );
 }
@@ -184,9 +186,13 @@ function getStockStatus(currentStock, reorderLevel) {
 // Helper: calculate analytics from report
 // @ts-ignore
 function calculateAnalyticsFromReport(
+  // @ts-ignore
   categories,
+  // @ts-ignore
   lowStock,
+  // @ts-ignore
   movements,
+  // @ts-ignore
   summary,
 ) {
   // @ts-ignore
@@ -220,11 +226,13 @@ function calculateAnalyticsFromReport(
 
   // @ts-ignore
   const totalInventoryValue = categories.reduce(
+    // @ts-ignore
     (sum, cat) => sum + cat.stock_value,
     0,
   );
   // @ts-ignore
   const lowStockValue = lowStock.reduce(
+    // @ts-ignore
     (sum, item) => sum + item.stock_value,
     0,
   );
@@ -338,6 +346,7 @@ function generateRecommendations(data) {
 
 // ----------------------------------------------------------------------
 // CSV export
+// @ts-ignore
 // @ts-ignore
 async function exportCSV(data, params) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -922,6 +931,7 @@ async function exportExcel(data, params) {
   ];
   const recommendations = generateRecommendations(data);
   // @ts-ignore
+  // @ts-ignore
   recommendations.forEach((rec, idx) => {
     const row = recSheet.addRow({
       priority: rec.priority,
@@ -1348,6 +1358,7 @@ async function exportPDF(data, params) {
     }
     let x = tableX;
     // @ts-ignore
+    // @ts-ignore
     alertWidths.forEach((w, i) => {
       doc.rect(x, tableY, w, 20).strokeColor("#DDDDDD").stroke();
       x += w;
@@ -1517,10 +1528,12 @@ async function exportPDF(data, params) {
     doc.moveDown(1);
   });
 
-  // Footer
-  const totalPages = doc.bufferedPageRange().count;
-  for (let i = 0; i < totalPages; i++) {
-    doc.switchToPage(i);
+
+   // ✅ FIXED: Footer gamit ang buffered page range (1‑based page numbers)
+  const range = doc.bufferedPageRange();
+  for (let i = 0; i < range.count; i++) {
+    const pageNum = range.start + i; // aktwal na page number (1‑based)
+    doc.switchToPage(pageNum);
     doc
       .fontSize(7)
       .fillColor("#999999")
@@ -1528,7 +1541,7 @@ async function exportPDF(data, params) {
         `Inventory Analysis Report | Generated: ${new Date().toLocaleDateString()} | stashly v2.0 | Report Type: ${data.metadata.report_type} | Confidential`,
         40,
         doc.page.height - 20,
-        { align: "center", width: doc.page.width - 80 },
+        { align: "center", width: doc.page.width - 80 }
       );
     doc
       .moveTo(40, doc.page.height - 40)
@@ -1539,10 +1552,12 @@ async function exportPDF(data, params) {
     doc
       .fontSize(8)
       .fillColor("#666666")
-      .text(`Page ${i + 1} of ${totalPages}`, 40, doc.page.height - 30, {
-        align: "center",
-        width: doc.page.width - 80,
-      });
+      .text(
+        `Page ${pageNum} of ${range.start + range.count - 1}`,
+        40,
+        doc.page.height - 30,
+        { align: "center", width: doc.page.width - 80 }
+      );
   }
 
   doc.end();

@@ -45,7 +45,6 @@ class StockMovementExportHandler {
    * @param {{ method: string; params: any; }} payload
    */
   // @ts-ignore
-  // @ts-ignore
   async handleRequest(event, payload) {
     try {
       const method = payload.method;
@@ -185,7 +184,7 @@ class StockMovementExportHandler {
       .leftJoinAndSelect("si.product", "p")
       .leftJoinAndSelect("si.variant", "pv")
       .leftJoinAndSelect("sm.warehouse", "w")
-      .leftJoinAndSelect("sm.createdBy", "u")
+      // ❌ Removed leftJoinAndSelect on "createdBy" (user entity does not exist)
       .select([
         "sm.id",
         "p.name as product_name",
@@ -195,7 +194,6 @@ class StockMovementExportHandler {
         "sm.movement_type",
         "sm.change",
         "w.name as warehouse_name",
-        "u.username as user_name",
         "sm.reference_code",
         "sm.reason",
         "sm.created_at",
@@ -233,7 +231,8 @@ class StockMovementExportHandler {
     if (params.search) {
       const searchTerm = `%${params.search}%`;
       queryBuilder.andWhere(
-        "(p.name LIKE :search OR p.sku LIKE :search OR w.name LIKE :search OR u.username LIKE :search OR sm.reference_code LIKE :search)",
+        // ❌ Removed u.username from search condition
+        "(p.name LIKE :search OR p.sku LIKE :search OR w.name LIKE :search OR sm.reference_code LIKE :search)",
         { search: searchTerm },
       );
     }
@@ -265,7 +264,7 @@ class StockMovementExportHandler {
         Quantity: Math.abs(movement.sm_change) || 0,
         Direction: direction,
         Warehouse: movement.warehouse_name || "N/A",
-        User: movement.user_name || "System",
+        User: "System", // ✅ Default na "System" dahil offline
         Reference: movement.sm_reference_code || "",
         Reason: movement.sm_reason || "",
       });
@@ -279,7 +278,6 @@ class StockMovementExportHandler {
    * @param {any[]} movements
    * @param {any} params
    */
-  // @ts-ignore
   // @ts-ignore
   async _exportCSV(movements, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -640,7 +638,6 @@ class StockMovementExportHandler {
 
         // Page break if not enough space
         if (cursorY + requiredRowHeight > pageHeight - 40) {
-          // draw footer for current page later after buffering pages; but to ensure visible footer per page, we can write footer now
           doc.addPage({ size: "A4", layout: "landscape", margin: 20 });
           cursorY = margin;
           drawHeader(cursorY);
@@ -777,13 +774,7 @@ class StockMovementExportHandler {
    */
   _getColumnAlignment(header) {
     const centerAlign = ["Quantity", "Direction"];
-    /**
-     * @type {string | string[]}
-     */
-    const rightAlign = [];
-
     if (centerAlign.includes(header)) return "center";
-    if (rightAlign.includes(header)) return "right";
     return "left";
   }
 

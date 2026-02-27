@@ -26,7 +26,7 @@ export interface backendAPI {
   orderLogs: (payload: any) => Promise<any>;
   orderItems: (payload: any) => Promise<any>;
   order: (payload: any) => Promise<any>;
-  notifications: (payload: any) => Promise<any>;
+  notification: (payload: any) => Promise<any>;
   lowStock: (payload: any) => Promise<any>;
   inventorySettings: (payload: any) => Promise<any>;
   inventoryReport: (payload: any) => Promise<any>;
@@ -50,7 +50,7 @@ export interface backendAPI {
   stockExport: (payload: any) => Promise<any>;
   supplierExport: (payload: any) => Promise<any>;
   variantExport: (payload: any) => Promise<any>;
-  salesExport: (payload: any) => Promise<any>;
+  salesReportExport: (payload: any) => Promise<any>;
   purchaseExport: (payload: any) => Promise<any>;
   outOfStockExport: (payload: any) => Promise<any>;
   lowOfStockExport: (payload: any) => Promise<any>;

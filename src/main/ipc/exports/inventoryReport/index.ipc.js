@@ -85,10 +85,10 @@ class InventoryReportExportHandler {
 const inventoryReportExportHandler = new InventoryReportExportHandler();
 
 ipcMain.handle(
-  "inventoryReportExport",
+  "inventoryExport",
   withErrorHandling(
     inventoryReportExportHandler.handleRequest.bind(inventoryReportExportHandler),
-    "IPC:inventoryReportExport"
+    "IPC:inventoryExport"
   )
 );
 

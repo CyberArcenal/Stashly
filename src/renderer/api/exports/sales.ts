@@ -118,11 +118,11 @@ class SalesExportAPI {
    */
   async exportSales(params: SalesExportParams): Promise<ExportResult> {
     try {
-      if (!window.backendAPI?.salesExport) {
+      if (!window.backendAPI?.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "export",
         params,
       });
@@ -179,11 +179,11 @@ class SalesExportAPI {
     params: Omit<SalesExportParams, "format">,
   ): Promise<SalesExportData> {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "exportPreview",
         params,
       });
@@ -257,11 +257,11 @@ class SalesExportAPI {
    */
   async getCategoryOptions(): Promise<Array<{ value: string; label: string }>> {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "categoryOptions",
         params: {},
       });
@@ -585,11 +585,11 @@ class SalesExportAPI {
     }>
   > {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "exportHistory",
         params: {},
       });
@@ -614,11 +614,11 @@ class SalesExportAPI {
     recipients: string[];
   }): Promise<{ id: number; message: string }> {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "scheduleExport",
         params: schedule,
       });
@@ -640,11 +640,11 @@ class SalesExportAPI {
    */
   async cancelScheduledExport(scheduleId: number): Promise<void> {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "cancelScheduledExport",
         params: { scheduleId },
       });
@@ -672,11 +672,11 @@ class SalesExportAPI {
     }>
   > {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "exportTemplates",
         params: {},
       });
@@ -699,11 +699,11 @@ class SalesExportAPI {
     filters: Omit<SalesExportParams, "format">;
   }): Promise<{ id: number; message: string }> {
     try {
-      if (!window.backendAPI || !window.backendAPI.salesExport) {
+      if (!window.backendAPI || !window.backendAPI.salesReportExport) {
         throw new Error("Electron API not available");
       }
 
-      const response = await window.backendAPI.salesExport({
+      const response = await window.backendAPI.salesReportExport({
         method: "saveExportTemplate",
         params: template,
       });

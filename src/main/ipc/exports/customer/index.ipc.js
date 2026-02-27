@@ -17,12 +17,10 @@ class CustomerExportHandler {
       "customer_exports",
     );
 
-    // Create export directory if it doesn't exist
     if (!fs.existsSync(this.EXPORT_DIR)) {
       fs.mkdirSync(this.EXPORT_DIR, { recursive: true });
     }
 
-    // Initialize ExcelJS if available
     this.excelJS = null;
     this._initializeExcelJS();
   }
@@ -39,9 +37,6 @@ class CustomerExportHandler {
     }
   }
 
-  /**
-   * Main request handler
-   */
   // @ts-ignore
   async handleRequest(event, payload) {
     try {
@@ -79,9 +74,6 @@ class CustomerExportHandler {
     }
   }
 
-  /**
-   * Export customers in specified format
-   */
   // @ts-ignore
   async exportCustomers(params) {
     try {
@@ -95,10 +87,9 @@ class CustomerExportHandler {
         };
       }
 
-      // Get customer data
       const customers = await this._getBaseCustomersData(params);
-
       let result;
+
       switch (format) {
         case "csv":
           result = await this._exportCSV(customers, params);
@@ -111,7 +102,6 @@ class CustomerExportHandler {
           break;
       }
 
-      // Read file content as base64 for transmission
       // @ts-ignore
       const filepath = path.join(this.EXPORT_DIR, result.filename);
       const fileBuffer = fs.readFileSync(filepath);
@@ -142,19 +132,15 @@ class CustomerExportHandler {
     }
   }
 
-  /**
-   * Get export preview data
-   */
   // @ts-ignore
   async getExportPreview(params) {
     try {
       const customers = await this._getBaseCustomersData(params);
-
       return {
         status: true,
         message: "Export preview generated successfully",
         data: {
-          customers: customers.slice(0, 10), // Limit preview to 10 items
+          customers: customers.slice(0, 10),
           totalCount: customers.length,
         },
       };
@@ -169,9 +155,6 @@ class CustomerExportHandler {
     }
   }
 
-  /**
-   * Get base customers data with essential fields using TypeORM
-   */
   // @ts-ignore
   async _getBaseCustomersData(params) {
     const customerRepo = AppDataSource.getRepository(Customer);
@@ -189,9 +172,9 @@ class CustomerExportHandler {
         "c.createdAt",
         "c.updatedAt",
       ])
-      .where("c.deletedAt IS NULL"); // Assuming soft delete; adjust if needed
+      // ❌ Removed the non‑existent "c.deletedAt" condition
+      .where("1 = 1"); // no soft delete
 
-    // Apply filters
     if (params.status && params.status !== "all") {
       queryBuilder.andWhere("c.status = :status", { status: params.status });
     }
@@ -222,7 +205,6 @@ class CustomerExportHandler {
 
     const customers = await queryBuilder.getRawMany();
 
-    // Process customers
     const processedCustomers = [];
     for (const customer of customers) {
       const joinedDate = new Date(customer.c_createdAt);
@@ -251,47 +233,32 @@ class CustomerExportHandler {
     return processedCustomers;
   }
 
-  /**
-   * Export data as CSV
-   */
   // @ts-ignore
   async _exportCSV(customers, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `customer_list_${timestamp}.csv`;
     const filepath = path.join(this.EXPORT_DIR, filename);
 
-    // Create CSV content
     let csvContent = [];
-
-    // Title
     csvContent.push("Customer List");
     csvContent.push(`Generated: ${new Date().toLocaleString()}`);
     csvContent.push(`Total Customers: ${customers.length}`);
     csvContent.push("");
 
-    // Headers
     if (customers.length > 0) {
       const headers = Object.keys(customers[0]);
       csvContent.push(headers.join(","));
     }
 
-    // Data rows
     // @ts-ignore
     customers.forEach((customer) => {
-      const row = Object.values(customer).map((value) => {
-        return typeof value === "string" && value.includes(",")
-          ? `"${value}"`
-          : value;
-      });
+      const row = Object.values(customer).map((value) =>
+        typeof value === "string" && value.includes(",") ? `"${value}"` : value,
+      );
       csvContent.push(row.join(","));
     });
 
-    const csvString = csvContent.join("\n");
-
-    // Save to file
-    fs.writeFileSync(filepath, csvString, "utf8");
-
-    // Get file stats
+    fs.writeFileSync(filepath, csvContent.join("\n"), "utf8");
     const stats = fs.statSync(filepath);
 
     return {
@@ -300,15 +267,10 @@ class CustomerExportHandler {
     };
   }
 
-  /**
-   * Export data as Excel
-   */
   // @ts-ignore
   async _exportExcel(customers, params) {
     try {
-      if (!this.excelJS) {
-        throw new Error("ExcelJS not available");
-      }
+      if (!this.excelJS) throw new Error("ExcelJS not available");
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `customer_list_${timestamp}.xlsx`;
@@ -320,7 +282,6 @@ class CustomerExportHandler {
 
       const worksheet = workbook.addWorksheet("Customers");
 
-      // Set default column widths
       worksheet.columns = [
         { header: "ID", key: "id", width: 10 },
         { header: "Name", key: "name", width: 25 },
@@ -334,24 +295,20 @@ class CustomerExportHandler {
         { header: "Account Age", key: "account_age", width: 12 },
       ];
 
-      // Add title row
       const titleRow = worksheet.addRow(["Customer List"]);
       titleRow.font = { bold: true, size: 14 };
       titleRow.height = 20;
-      worksheet.mergeCells(`A1:J1`);
+      worksheet.mergeCells("A1:J1");
 
-      // Add subtitle
       const subtitleRow = worksheet.addRow([
         `Generated: ${new Date().toLocaleString()} | Total: ${customers.length} customers`,
       ]);
-      worksheet.mergeCells(`A2:J2`);
+      worksheet.mergeCells("A2:J2");
       subtitleRow.font = { size: 9, italic: true };
       subtitleRow.height = 15;
 
-      // Add empty row
       worksheet.addRow([]);
 
-      // Add header row
       const headerRow = worksheet.getRow(4);
       // @ts-ignore
       headerRow.values = worksheet.columns.map((col) => col.header);
@@ -367,7 +324,6 @@ class CustomerExportHandler {
         bottom: { style: "thin", color: { argb: "000000" } },
       };
 
-      // Add data rows
       // @ts-ignore
       customers.forEach((customer, index) => {
         const row = worksheet.addRow([
@@ -383,7 +339,6 @@ class CustomerExportHandler {
           customer["Account Age (days)"],
         ]);
 
-        // Zebra striping
         if (index % 2 === 0) {
           row.fill = {
             type: "pattern",
@@ -392,27 +347,27 @@ class CustomerExportHandler {
           };
         }
 
-        // Center align numeric columns
-        row.getCell(1).alignment = { horizontal: "center" }; // ID
-        row.getCell(6).alignment = { horizontal: "center" }; // Loyalty Points
-        row.getCell(7).alignment = { horizontal: "center" }; // Lifetime Points
-        row.getCell(10).alignment = { horizontal: "center" }; // Account Age
+        row.getCell(1).alignment = { horizontal: "center" };
+        row.getCell(6).alignment = { horizontal: "center" };
+        row.getCell(7).alignment = { horizontal: "center" };
+        row.getCell(10).alignment = { horizontal: "center" };
 
-        // Color code status
+        // ✅ Fix: use lowercase comparison on the displayed status
         const statusCell = row.getCell(5);
-        if (customer["Status"] === "regular") {
+        const status = customer["Status"].toLowerCase();
+        if (status === "regular") {
           statusCell.fill = {
             type: "pattern",
             pattern: "solid",
             fgColor: { argb: "C6EFCE" }, // Green
           };
-        } else if (customer["Status"] === "vip") {
+        } else if (status === "vip") {
           statusCell.fill = {
             type: "pattern",
             pattern: "solid",
             fgColor: { argb: "FFD700" }, // Gold
           };
-        } else if (customer["Status"] === "elite") {
+        } else if (status === "elite") {
           statusCell.fill = {
             type: "pattern",
             pattern: "solid",
@@ -421,10 +376,8 @@ class CustomerExportHandler {
         }
       });
 
-      // Freeze header row
       worksheet.views = [{ state: "frozen", ySplit: 4 }];
 
-      // Add auto-filter
       if (customers.length > 0) {
         worksheet.autoFilter = {
           from: { row: 4, column: 1 },
@@ -445,9 +398,6 @@ class CustomerExportHandler {
     }
   }
 
-  /**
-   * Export data as PDF
-   */
   // @ts-ignore
   async _exportPDF(customers, params) {
     try {
@@ -463,7 +413,6 @@ class CustomerExportHandler {
       const filename = `customer_list_${timestamp}.pdf`;
       const filepath = path.join(this.EXPORT_DIR, filename);
 
-      // Create a PDF document
       const doc = new PDFKit({
         size: "A4",
         layout: "landscape",
@@ -475,11 +424,9 @@ class CustomerExportHandler {
         },
       });
 
-      // Pipe to file
       const writeStream = fs.createWriteStream(filepath);
       doc.pipe(writeStream);
 
-      // Title
       doc.fontSize(14).font("Helvetica-Bold").text("Customer List", {
         align: "center",
       });
@@ -489,9 +436,7 @@ class CustomerExportHandler {
         .font("Helvetica")
         .text(
           `Generated: ${new Date().toLocaleDateString()} | Total: ${customers.length} customers`,
-          {
-            align: "center",
-          },
+          { align: "center" },
         );
 
       doc.moveDown(0.5);
@@ -504,32 +449,28 @@ class CustomerExportHandler {
           writeStream.on("finish", resolve);
           writeStream.on("error", reject);
         });
-
         const stats = fs.statSync(filepath);
-        return {
-          filename: filename,
-          fileSize: this._formatFileSize(stats.size),
-        };
+        return { filename, fileSize: this._formatFileSize(stats.size) };
       }
 
-      // Calculate table dimensions
       const pageWidth = 842;
       const leftMargin = 20;
       const rightMargin = 20;
       const topMargin = doc.y;
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
-      // Define column widths
+      // ✅ Added column for Account Age (now 10 columns)
       const columnWidths = [
-        availableWidth * 0.07, // ID
-        availableWidth * 0.15, // Name
-        availableWidth * 0.18, // Email
-        availableWidth * 0.1, // Phone
-        availableWidth * 0.08, // Status
-        availableWidth * 0.1, // Loyalty Points
-        availableWidth * 0.1, // Lifetime Points
-        availableWidth * 0.08, // Joined Date
-        availableWidth * 0.08, // Last Updated
+        availableWidth * 0.06, // ID
+        availableWidth * 0.14, // Name
+        availableWidth * 0.16, // Email
+        availableWidth * 0.09, // Phone
+        availableWidth * 0.07, // Status
+        availableWidth * 0.09, // Loyalty Points
+        availableWidth * 0.09, // Lifetime Points
+        availableWidth * 0.07, // Joined Date
+        availableWidth * 0.07, // Last Updated
+        availableWidth * 0.07, // Account Age
       ];
 
       const rowHeight = 15;
@@ -544,9 +485,10 @@ class CustomerExportHandler {
         "Lifetime",
         "Joined",
         "Updated",
+        "Age (days)",
       ];
 
-      // Draw header row
+      // Header row
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
         .fillColor("#4A6FA5")
@@ -558,26 +500,19 @@ class CustomerExportHandler {
       headers.forEach((header, i) => {
         doc.text(header, xPos + 3, currentY + 4, {
           width: columnWidths[i] - 6,
-          align: "left",
+          align: i >= 8 ? "center" : "left", // age column centered
         });
         xPos += columnWidths[i];
       });
 
       currentY += rowHeight;
-
-      // Draw data rows
       doc.fontSize(8).font("Helvetica");
 
       for (let i = 0; i < customers.length; i++) {
         const customer = customers[i];
 
-        // Check if we need a new page
         if (currentY + rowHeight > 575) {
-          doc.addPage({
-            size: "A4",
-            layout: "landscape",
-            margin: 20,
-          });
+          doc.addPage({ size: "A4", layout: "landscape", margin: 20 });
           currentY = 20;
 
           // Redraw header on new page
@@ -585,22 +520,19 @@ class CustomerExportHandler {
             .rect(leftMargin, currentY, availableWidth, rowHeight)
             .fillColor("#4A6FA5")
             .fill();
-
           doc.fillColor("white").fontSize(8).font("Helvetica-Bold");
           xPos = leftMargin;
           headers.forEach((header, j) => {
             doc.text(header, xPos + 3, currentY + 4, {
               width: columnWidths[j] - 6,
-              align: "left",
+              align: j >= 8 ? "center" : "left",
             });
             xPos += columnWidths[j];
           });
           currentY += rowHeight;
-
           doc.fontSize(8).font("Helvetica");
         }
 
-        // Zebra striping
         if (i % 2 === 0) {
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
@@ -608,10 +540,10 @@ class CustomerExportHandler {
             .fill();
         }
 
-        // Draw cell content
         doc.fillColor("#000000");
         xPos = leftMargin;
 
+        // Data array now includes Account Age
         const customerData = [
           customer["ID"],
           customer["Name"],
@@ -622,73 +554,62 @@ class CustomerExportHandler {
           customer["Lifetime Points"],
           customer["Joined Date"],
           customer["Last Updated"],
+          customer["Account Age (days)"],
         ];
 
         customerData.forEach((value, j) => {
           let cellValue = String(value);
 
-          // Truncate text if too long
-          if (j === 2 && cellValue.length > 25) {
-            // Email
-            cellValue = cellValue.substring(0, 22) + "...";
-          } else if (j === 1 && cellValue.length > 20) {
-            // Name
-            cellValue = cellValue.substring(0, 17) + "...";
-          }
+          if (j === 2 && cellValue.length > 25)
+            cellValue = cellValue.substring(0, 22) + "..."; // Email
+          if (j === 1 && cellValue.length > 20)
+            cellValue = cellValue.substring(0, 17) + "..."; // Name
 
-          // Status color coding
+          // ✅ Fix status color using lowercase
           if (j === 4) {
-            if (cellValue === "regular") {
-              doc.fillColor("green");
-            } else if (cellValue === "vip") {
-              doc.fillColor("gold");
-            } else if (cellValue === "elite") {
-              doc.fillColor("silver");
-            }
+            const status = cellValue.toLowerCase();
+            if (status === "regular") doc.fillColor("green");
+            else if (status === "vip") doc.fillColor("gold");
+            else if (status === "elite") doc.fillColor("silver");
+            else doc.fillColor("#000000");
           } else {
             doc.fillColor("#000000");
           }
 
           doc.text(cellValue, xPos + 3, currentY + 4, {
             width: columnWidths[j] - 6,
-            align: "left",
+            align: j >= 8 ? "center" : "left",
           });
 
-          // Reset color
           doc.fillColor("#000000");
-
           xPos += columnWidths[j];
         });
 
         currentY += rowHeight;
       }
 
-      // Add footer
+      // ✅ Fixed footer loop (1‑based pages)
       const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      for (let page = 1; page <= pageCount; page++) {
+        doc.switchToPage(page);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${i + 1} of ${pageCount}`, leftMargin, 575, {
+          .text(`Page ${page} of ${pageCount}`, leftMargin, 575, {
             align: "right",
             width: availableWidth,
           });
       }
 
-      // Finalize PDF
       doc.end();
 
-      // Wait for write to complete
       await new Promise((resolve, reject) => {
         // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
 
-      // Get file stats
       const stats = fs.statSync(filepath);
-
       return {
         filename: filename,
         fileSize: this._formatFileSize(stats.size),
@@ -699,9 +620,6 @@ class CustomerExportHandler {
     }
   }
 
-  /**
-   * Get supported formats for API compatibility
-   */
   getSupportedFormats() {
     return [
       {
@@ -724,9 +642,6 @@ class CustomerExportHandler {
     ];
   }
 
-  /**
-   * Get status filter options
-   */
   getStatusOptions() {
     return [
       { value: "all", label: "All Statuses" },
@@ -735,8 +650,6 @@ class CustomerExportHandler {
       { value: "elite", label: "Elite" },
     ];
   }
-
-  // HELPER METHODS
 
   // @ts-ignore
   _getStatusDisplay(status) {
@@ -771,10 +684,8 @@ class CustomerExportHandler {
   }
 }
 
-// Create and export handler instance
 const customerExportHandler = new CustomerExportHandler();
 
-// Register IPC handler if in Electron environment
 if (ipcMain) {
   ipcMain.handle("customerExport", async (event, payload) => {
     return await customerExportHandler.handleRequest(event, payload);
@@ -785,5 +696,4 @@ if (ipcMain) {
   );
 }
 
-// Export for use in other modules
 module.exports = { CustomerExportHandler, customerExportHandler };

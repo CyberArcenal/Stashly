@@ -45,6 +45,7 @@ class StockItemExportHandler {
    * @param {{ method: string; params: any; }} payload
    */
   // @ts-ignore
+  // @ts-ignore
   async handleRequest(event, payload) {
     try {
       const method = payload.method;
@@ -271,6 +272,7 @@ class StockItemExportHandler {
    * @param {any} params
    */
   // @ts-ignore
+  // @ts-ignore
   async _exportCSV(stockItems, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `stock_items_${timestamp}.csv`;
@@ -489,7 +491,6 @@ class StockItemExportHandler {
       const filename = `stock_items_${timestamp}.pdf`;
       const filepath = path.join(this.EXPORT_DIR, filename);
 
-      // Create a PDF document with landscape orientation for better table fit
       const doc = new PDFKit({
         size: "A4",
         layout: "landscape",
@@ -499,13 +500,12 @@ class StockItemExportHandler {
           Author: "Inventory Management System",
           CreationDate: new Date(),
         },
+        bufferPages: true, // ✅ kailangan para sa bufferedPageRange
       });
 
-      // Pipe to file
       const writeStream = fs.createWriteStream(filepath);
       doc.pipe(writeStream);
 
-      // Title - more compact
       doc.fontSize(14).font("Helvetica-Bold").text("Stock Items List", {
         align: "center",
       });
@@ -515,9 +515,7 @@ class StockItemExportHandler {
         .font("Helvetica")
         .text(
           `Generated: ${new Date().toLocaleDateString()} | Total: ${stockItems.length} items`,
-          {
-            align: "center",
-          },
+          { align: "center" },
         );
 
       doc.moveDown(0.5);
@@ -538,24 +536,22 @@ class StockItemExportHandler {
         };
       }
 
-      // Calculate table dimensions
-      const pageWidth = 842; // A4 landscape width in points
-      const pageHeight = 595; // A4 landscape height in points
+      const pageWidth = 842;
+      const pageHeight = 595;
       const leftMargin = 20;
       const rightMargin = 20;
       const topMargin = doc.y;
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
-      // Define column widths as percentages of available width
       const columnWidths = [
-        availableWidth * 0.25, // Product (25%)
-        availableWidth * 0.12, // SKU (12%)
-        availableWidth * 0.15, // Warehouse (15%)
-        availableWidth * 0.08, // Quantity (8%)
-        availableWidth * 0.1, // Reorder Level (10%)
-        availableWidth * 0.1, // Status (10%)
-        availableWidth * 0.1, // Cost per Item (10%)
-        availableWidth * 0.1, // Total Value (10%)
+        availableWidth * 0.25, // Product
+        availableWidth * 0.12, // SKU
+        availableWidth * 0.15, // Warehouse
+        availableWidth * 0.08, // Quantity
+        availableWidth * 0.1, // Reorder Level
+        availableWidth * 0.1, // Status
+        availableWidth * 0.1, // Cost per Item
+        availableWidth * 0.1, // Total Value
       ];
 
       const rowHeight = 15;
@@ -571,7 +567,7 @@ class StockItemExportHandler {
         "Total Value",
       ];
 
-      // Draw header row with background
+      // Header
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
         .fillColor("#4A6FA5")
@@ -589,23 +585,16 @@ class StockItemExportHandler {
       });
 
       currentY += rowHeight;
-
-      // Draw data rows with zebra striping
       doc.fontSize(8).font("Helvetica");
 
       for (let i = 0; i < stockItems.length; i++) {
         const item = stockItems[i];
 
-        // Check if we need a new page
         if (currentY + rowHeight > pageHeight - 20) {
-          doc.addPage({
-            size: "A4",
-            layout: "landscape",
-            margin: 20,
-          });
+          doc.addPage({ size: "A4", layout: "landscape", margin: 20 });
           currentY = 20;
 
-          // Redraw header on new page
+          // Redraw header
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
             .fillColor("#4A6FA5")
@@ -638,7 +627,7 @@ class StockItemExportHandler {
             .fill();
         }
 
-        // Draw cell borders
+        // Cell borders
         doc.lineWidth(0.2);
         xPos = leftMargin;
         for (let j = 0; j < columnWidths.length; j++) {
@@ -649,14 +638,13 @@ class StockItemExportHandler {
             .stroke();
           xPos += columnWidths[j];
         }
-        // Bottom border
         doc
           .moveTo(leftMargin, currentY + rowHeight)
           .lineTo(leftMargin + availableWidth, currentY + rowHeight)
           .strokeColor("#CCCCCC")
           .stroke();
 
-        // Draw cell content
+        // Cell content
         doc.fillColor("#000000");
         xPos = leftMargin;
 
@@ -672,8 +660,8 @@ class StockItemExportHandler {
         ];
 
         rowData.forEach((cellValue, j) => {
-          // Truncate text if too long
           let displayValue = String(cellValue);
+          // Truncate long text
           if (j === 0 && displayValue.length > 30) {
             displayValue = displayValue.substring(0, 27) + "...";
           } else if (j === 2 && displayValue.length > 15) {
@@ -691,32 +679,35 @@ class StockItemExportHandler {
         currentY += rowHeight;
       }
 
-      // Add footer with page number
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      // ✅ FIXED: Footer gamit ang buffered page range
+      const range = doc.bufferedPageRange();
+      const start = range.start || 0;
+      const count = range.count || 0;
+      for (let p = start; p < start + count; p++) {
+        doc.switchToPage(p);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${i + 1} of ${pageCount}`, leftMargin, pageHeight - 15, {
-            align: "right",
-            width: availableWidth,
-          });
+          .text(
+            `Page ${p - start + 1} of ${count}`,
+            leftMargin,
+            pageHeight - 15,
+            {
+              align: "right",
+              width: availableWidth,
+            },
+          );
       }
 
-      // Finalize PDF
       doc.end();
 
-      // Wait for write to complete
       await new Promise((resolve, reject) => {
         // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
 
-      // Get file stats
       const stats = fs.statSync(filepath);
-
       return {
         filename: filename,
         fileSize: this._formatFileSize(stats.size),

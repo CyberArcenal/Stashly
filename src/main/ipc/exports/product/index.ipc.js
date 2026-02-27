@@ -26,12 +26,10 @@ class ProductExportHandler {
       "product_exports",
     );
 
-    // Create export directory if it doesn't exist
     if (!fs.existsSync(this.EXPORT_DIR)) {
       fs.mkdirSync(this.EXPORT_DIR, { recursive: true });
     }
 
-    // Initialize ExcelJS if available
     this.excelJS = null;
     this._initializeExcelJS();
   }
@@ -48,12 +46,6 @@ class ProductExportHandler {
     }
   }
 
-  /**
-   * Main request handler
-   * @param {Electron.IpcMainInvokeEvent} event
-   * @param {{ method: string; params: any; }} payload
-   */
-  // @ts-ignore
   // @ts-ignore
   async handleRequest(event, payload) {
     try {
@@ -91,10 +83,7 @@ class ProductExportHandler {
     }
   }
 
-  /**
-   * Export products in specified format
-   * @param {{ format: string; category?: string; status?: string; low_stock?: string; search?: string; }} params
-   */
+  // @ts-ignore
   async exportProducts(params) {
     try {
       const format = params.format || "csv";
@@ -107,7 +96,6 @@ class ProductExportHandler {
         };
       }
 
-      // Get product data
       const products = await this._getBaseProductsData(params);
 
       let result;
@@ -123,7 +111,6 @@ class ProductExportHandler {
           break;
       }
 
-      // Read file content as base64 for transmission
       // @ts-ignore
       const filepath = path.join(this.EXPORT_DIR, result.filename);
       const fileBuffer = fs.readFileSync(filepath);
@@ -154,19 +141,15 @@ class ProductExportHandler {
     }
   }
 
-  /**
-   * Get export preview data
-   * @param {{ category?: string; status?: string; low_stock?: string; search?: string; }} params
-   */
+  // @ts-ignore
   async getExportPreview(params) {
     try {
       const products = await this._getBaseProductsData(params);
-
       return {
         status: true,
         message: "Export preview generated successfully",
         data: {
-          products: products.slice(0, 10), // Limit preview to 10 items
+          products: products.slice(0, 10),
           totalCount: products.length,
         },
       };
@@ -181,14 +164,10 @@ class ProductExportHandler {
     }
   }
 
-  /**
-   * Get base products data with essential fields using TypeORM
-   * @param {{ category?: string; status?: string; search?: string; low_stock?: string; }} params
-   */
+  // @ts-ignore
   async _getBaseProductsData(params) {
     const productRepo = AppDataSource.getRepository(Product);
 
-    // Subquery for variants count
     const variantCountSubQuery = productRepo
       .createQueryBuilder()
       .subQuery()
@@ -198,7 +177,6 @@ class ProductExportHandler {
       .andWhere("pv.is_deleted = 0")
       .getQuery();
 
-    // Subquery for base product stock (no variant)
     const productStockSubQuery = productRepo
       .createQueryBuilder()
       .subQuery()
@@ -208,7 +186,6 @@ class ProductExportHandler {
       .andWhere("si.variantId IS NULL")
       .getQuery();
 
-    // Subquery for variant stock (sum over all variants)
     const variantStockSubQuery = productRepo
       .createQueryBuilder()
       .subQuery()
@@ -219,10 +196,8 @@ class ProductExportHandler {
       .where("pv.productId = p.id")
       .getQuery();
 
-    // ✅ Raw EXISTS expression (no double parentheses)
     const lowStockExists = `EXISTS(SELECT 1 FROM "stock_items" "si" WHERE "si"."productId" = "p"."id" AND "si"."quantity" < "si"."low_stock_threshold" AND "si"."low_stock_threshold" IS NOT NULL)`;
 
-    // Build main query – note: p.low_stock_threshold is REMOVED
     const queryBuilder = productRepo
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.category", "c")
@@ -236,14 +211,14 @@ class ProductExportHandler {
         "p.is_published",
         "p.allow_backorder",
         "p.track_quantity",
+        "p.barcode", // ✅ added barcode
       ])
       .addSelect(`(${variantCountSubQuery})`, "variants_count")
       .addSelect(`(${productStockSubQuery})`, "product_stock")
       .addSelect(`(${variantStockSubQuery})`, "variant_stock")
-      .addSelect(lowStockExists, "has_low_stock") // ✅ corrected
+      .addSelect(lowStockExists, "has_low_stock")
       .where("p.is_deleted = 0");
 
-    // Apply filters
     if (params.category) {
       queryBuilder.andWhere("p.categoryId = :categoryId", {
         categoryId: params.category,
@@ -268,15 +243,13 @@ class ProductExportHandler {
 
     const products = await queryBuilder.getRawMany();
 
-    // Process results
     const processedProducts = [];
     for (const product of products) {
       const totalQuantity =
         (parseInt(product.product_stock) || 0) +
         (parseInt(product.variant_stock) || 0);
-      const lowStockFlag = !!parseInt(product.has_low_stock); // 1 → true, 0 → false
+      const lowStockFlag = !!parseInt(product.has_low_stock);
 
-      // Determine status
       let status = "In Stock";
       if (totalQuantity === 0) {
         status = product.p_allow_backorder ? "Backorder" : "Out of Stock";
@@ -297,49 +270,35 @@ class ProductExportHandler {
         Status: status,
         Published: product.p_is_published === 1 ? "Yes" : "No",
         "Variants Count": parseInt(product.variants_count) || 0,
+        Barcode: product.p_barcode || "", // ✅ added barcode
       });
     }
 
-    // Apply low‑stock filter if requested
-    let filteredProducts = processedProducts;
     if (params.low_stock === "true") {
-      filteredProducts = processedProducts.filter(
-        (p) => p.Status === "Low Stock",
-      );
+      return processedProducts.filter((p) => p.Status === "Low Stock");
     }
-
-    return filteredProducts;
+    return processedProducts;
   }
 
-  /**
-   * Export data as CSV
-   * @param {any[]} products
-   * @param {any} params
-   */
   // @ts-ignore
   async _exportCSV(products, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `product_list_${timestamp}.csv`;
     const filepath = path.join(this.EXPORT_DIR, filename);
 
-    // Create CSV content
     let csvContent = [];
-
-    // Title
     csvContent.push("Product List");
     csvContent.push(`Generated: ${new Date().toLocaleString()}`);
     csvContent.push(`Total Products: ${products.length}`);
     csvContent.push("");
 
-    // Headers
     const headers = Object.keys(products[0] || {});
     csvContent.push(headers.join(","));
 
-    // Data rows
+    // @ts-ignore
     products.forEach((product) => {
       const row = headers.map((header) => {
         const value = product[header];
-        // Handle values with commas by wrapping in quotes
         return typeof value === "string" && value.includes(",")
           ? `"${value}"`
           : value;
@@ -347,12 +306,7 @@ class ProductExportHandler {
       csvContent.push(row.join(","));
     });
 
-    const csvString = csvContent.join("\n");
-
-    // Save to file
-    fs.writeFileSync(filepath, csvString, "utf8");
-
-    // Get file stats
+    fs.writeFileSync(filepath, csvContent.join("\n"), "utf8");
     const stats = fs.statSync(filepath);
 
     return {
@@ -361,16 +315,10 @@ class ProductExportHandler {
     };
   }
 
-  /**
-   * Export data as Excel with compact styling
-   * @param {any[]} products
-   * @param {{ format: string; category?: string; status?: string; low_stock?: string; search?: string; }} params
-   */
+  // @ts-ignore
   async _exportExcel(products, params) {
     try {
-      if (!this.excelJS) {
-        throw new Error("ExcelJS not available");
-      }
+      if (!this.excelJS) throw new Error("ExcelJS not available");
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `product_list_${timestamp}.xlsx`;
@@ -382,7 +330,7 @@ class ProductExportHandler {
 
       const worksheet = workbook.addWorksheet("Products");
 
-      // Set default column widths
+      // Columns now include Barcode
       worksheet.columns = [
         { header: "SKU", key: "sku", width: 12 },
         { header: "Name", key: "name", width: 35 },
@@ -393,26 +341,23 @@ class ProductExportHandler {
         { header: "Status", key: "status", width: 12 },
         { header: "Published", key: "published", width: 10 },
         { header: "Variants", key: "variants", width: 10 },
+        { header: "Barcode", key: "barcode", width: 18 }, // ✅ added
       ];
 
-      // Add title row
       const titleRow = worksheet.addRow(["Product List"]);
       titleRow.font = { bold: true, size: 14 };
       titleRow.height = 20;
-      worksheet.mergeCells(`A1:I1`);
+      worksheet.mergeCells(`A1:J1`); // now 10 columns
 
-      // Add subtitle
       const subtitleRow = worksheet.addRow([
         `Generated: ${new Date().toLocaleString()} | Total: ${products.length} products`,
       ]);
-      worksheet.mergeCells(`A2:I2`);
+      worksheet.mergeCells(`A2:J2`);
       subtitleRow.font = { size: 9, italic: true };
       subtitleRow.height = 15;
 
-      // Add empty row
       worksheet.addRow([]);
 
-      // Add header row
       const headerRow = worksheet.getRow(4);
       // @ts-ignore
       headerRow.values = worksheet.columns.map((col) => col.header);
@@ -420,7 +365,7 @@ class ProductExportHandler {
       headerRow.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "4472C4" }, // Dark blue
+        fgColor: { argb: "4472C4" },
       };
       headerRow.alignment = { horizontal: "center", vertical: "middle" };
       headerRow.height = 20;
@@ -428,7 +373,7 @@ class ProductExportHandler {
         bottom: { style: "thin", color: { argb: "000000" } },
       };
 
-      // Add data rows
+      // @ts-ignore
       products.forEach((product, index) => {
         const row = worksheet.addRow([
           product.SKU,
@@ -442,9 +387,9 @@ class ProductExportHandler {
           product.Status,
           product.Published,
           parseInt(product["Variants Count"]),
+          product.Barcode, // ✅ added
         ]);
 
-        // Zebra striping
         if (index % 2 === 0) {
           row.fill = {
             type: "pattern",
@@ -453,7 +398,6 @@ class ProductExportHandler {
           };
         }
 
-        // Format number columns
         const netPriceCell = row.getCell(4);
         const costCell = row.getCell(5);
 
@@ -461,17 +405,14 @@ class ProductExportHandler {
           netPriceCell.numFmt = '"$"#,##0.00';
           netPriceCell.alignment = { horizontal: "right" };
         }
-
         if (costCell.value && costCell.value !== "N/A") {
           costCell.numFmt = '"$"#,##0.00';
           costCell.alignment = { horizontal: "right" };
         }
 
-        // Center align numeric columns
         row.getCell(6).alignment = { horizontal: "center" }; // Stock
         row.getCell(9).alignment = { horizontal: "center" }; // Variants
 
-        // Color code status
         const statusCell = row.getCell(7);
         if (product.Status === "Out of Stock") {
           statusCell.fill = {
@@ -488,13 +429,11 @@ class ProductExportHandler {
         }
       });
 
-      // Freeze header row
       worksheet.views = [{ state: "frozen", ySplit: 4 }];
 
-      // Add auto-filter
       worksheet.autoFilter = {
         from: { row: 4, column: 1 },
-        to: { row: 4 + products.length, column: 9 },
+        to: { row: 4 + products.length, column: 10 },
       };
 
       await workbook.xlsx.writeFile(filepath);
@@ -510,11 +449,7 @@ class ProductExportHandler {
     }
   }
 
-  /**
-   * Export data as PDF with improved compact layout
-   * @param {any[]} products
-   * @param {any} params
-   */
+  // @ts-ignore
   async _exportPDF(products, params) {
     try {
       let PDFKit;
@@ -529,23 +464,21 @@ class ProductExportHandler {
       const filename = `product_list_${timestamp}.pdf`;
       const filepath = path.join(this.EXPORT_DIR, filename);
 
-      // Create a PDF document with landscape orientation for better table fit
       const doc = new PDFKit({
         size: "A4",
-        layout: "landscape", // Use landscape for better table fit
+        layout: "landscape",
         margin: 20,
         info: {
           Title: "Product List",
           Author: "Product Management System",
           CreationDate: new Date(),
         },
+        bufferPages: true,
       });
 
-      // Pipe to file
       const writeStream = fs.createWriteStream(filepath);
       doc.pipe(writeStream);
 
-      // Title - more compact
       doc.fontSize(14).font("Helvetica-Bold").text("Product List", {
         align: "center",
       });
@@ -555,9 +488,7 @@ class ProductExportHandler {
         .font("Helvetica")
         .text(
           `Generated: ${new Date().toLocaleDateString()} | Total: ${products.length} products`,
-          {
-            align: "center",
-          },
+          { align: "center" },
         );
 
       doc.moveDown(0.5);
@@ -578,32 +509,43 @@ class ProductExportHandler {
         };
       }
 
-      // Calculate table dimensions
-      const pageWidth = 842; // A4 landscape width in points
-      const pageHeight = 595; // A4 landscape height in points
+      const pageWidth = 842;
+      const pageHeight = 595;
       const leftMargin = 20;
       const rightMargin = 20;
       const topMargin = doc.y;
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
-      // Define column widths as percentages of available width
+      // ✅ 10 columns (added Barcode)
       const columnWidths = [
-        availableWidth * 0.12, // SKU (12%)
-        availableWidth * 0.25, // Name (25%)
-        availableWidth * 0.12, // Category (12%)
-        availableWidth * 0.09, // Net Price (9%)
-        availableWidth * 0.07, // Cost (7%)
-        availableWidth * 0.07, // Stock (7%)
-        availableWidth * 0.1, // Status (10%)
-        availableWidth * 0.08, // Published (8%)
-        availableWidth * 0.1, // Variants Count (10%)
+        availableWidth * 0.1, // SKU
+        availableWidth * 0.2, // Name
+        availableWidth * 0.1, // Category
+        availableWidth * 0.08, // Net Price
+        availableWidth * 0.06, // Cost
+        availableWidth * 0.06, // Stock
+        availableWidth * 0.08, // Status
+        availableWidth * 0.06, // Published
+        availableWidth * 0.08, // Variants Count
+        availableWidth * 0.18, // Barcode (larger for long codes)
       ];
 
       const rowHeight = 15;
       let currentY = topMargin;
-      const headers = Object.keys(products[0]);
+      const headers = [
+        "SKU",
+        "Name",
+        "Category",
+        "Net Price",
+        "Cost",
+        "Stock",
+        "Status",
+        "Published",
+        "Variants",
+        "Barcode",
+      ];
 
-      // Draw header row with background
+      // Draw header
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
         .fillColor("#4A6FA5")
@@ -621,23 +563,16 @@ class ProductExportHandler {
       });
 
       currentY += rowHeight;
-
-      // Draw data rows with zebra striping
       doc.fontSize(8).font("Helvetica");
 
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
 
-        // Check if we need a new page
         if (currentY + rowHeight > pageHeight - 20) {
-          doc.addPage({
-            size: "A4",
-            layout: "landscape",
-            margin: 20,
-          });
-          currentY = 20; // Reset Y position for new page
+          doc.addPage({ size: "A4", layout: "landscape", margin: 20 });
+          currentY = 20;
 
-          // Redraw header on new page
+          // Redraw header
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
             .fillColor("#4A6FA5")
@@ -670,7 +605,7 @@ class ProductExportHandler {
             .fill();
         }
 
-        // Draw cell borders
+        // Cell borders
         doc.lineWidth(0.2);
         xPos = leftMargin;
         for (let j = 0; j < columnWidths.length; j++) {
@@ -687,29 +622,46 @@ class ProductExportHandler {
           .strokeColor("#CCCCCC")
           .stroke();
 
-        // Draw cell content
+        // Cell content
         doc.fillColor("#000000");
         xPos = leftMargin;
 
-        headers.forEach((header, j) => {
-          let cellValue = String(product[header]);
+        const productData = [
+          product.SKU,
+          product.Name,
+          product.Category,
+          product["Net Price"],
+          product.Cost,
+          product.Stock.toString(),
+          product.Status,
+          product.Published,
+          product["Variants Count"].toString(),
+          product.Barcode,
+        ];
 
-          if (header === "Name" && cellValue.length > 30) {
-            cellValue = cellValue.substring(0, 27) + "...";
-          } else if (header === "Category" && cellValue.length > 15) {
-            cellValue = cellValue.substring(0, 12) + "...";
+        productData.forEach((cellValue, j) => {
+          let displayValue = String(cellValue);
+
+          // Truncate long text (except barcode)
+          if (j === 1 && displayValue.length > 30) {
+            displayValue = displayValue.substring(0, 27) + "...";
+          } else if (j === 2 && displayValue.length > 15) {
+            displayValue = displayValue.substring(0, 12) + "...";
+          } else if (j === 9 && displayValue.length > 30) {
+            // Barcode – bigyan ng limit pero huwag putulin kung kaya; i-wrap kung sobrang haba
+            // Dahil fixed row height, hindi mag-wrap, kaya kailangan tiyakin na hindi pinuputol.
+            // Ibigay ang buong barcode, ngunit kung sobrang haba ay puputulin pa rin ng PDF dahil sa width.
+            // Para maiwasan, pahabain ang column width.
           }
 
-          if (
-            (header === "Net Price" || header === "Cost") &&
-            cellValue !== "N/A"
-          ) {
-            cellValue = "$" + cellValue;
+          // Format currency
+          if ((j === 3 || j === 4) && displayValue !== "N/A") {
+            displayValue = "$" + displayValue;
           }
 
-          doc.text(cellValue, xPos + 3, currentY + 4, {
+          doc.text(displayValue, xPos + 3, currentY + 4, {
             width: columnWidths[j] - 6,
-            align: this._getColumnAlignment(header),
+            align: this._getColumnAlignment(headers[j]),
           });
 
           xPos += columnWidths[j];
@@ -718,59 +670,54 @@ class ProductExportHandler {
         currentY += rowHeight;
       }
 
-      // ✅ FIXED: Add footer with correct 1‑based page numbers
-      const totalPages = doc.bufferedPageRange().count;
-      for (let page = 1; page <= totalPages; page++) {
-        doc.switchToPage(page);
+      // Footer
+      const range = doc.bufferedPageRange();
+      const start = range.start || 0;
+      const count = range.count || 0;
+      for (let p = start; p < start + count; p++) {
+        doc.switchToPage(p);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${page} of ${totalPages}`, leftMargin, pageHeight - 15, {
-            align: "right",
-            width: availableWidth,
-          });
+          .text(
+            `Page ${p - start + 1} of ${count}`,
+            leftMargin,
+            pageHeight - 15,
+            {
+              align: "right",
+              width: availableWidth,
+            },
+          );
       }
 
-      // Finalize PDF
       doc.end();
 
-      // Wait for write to complete
       await new Promise((resolve, reject) => {
         // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
 
-      // Get file stats
       const stats = fs.statSync(filepath);
-
       return {
         filename: filename,
         fileSize: this._formatFileSize(stats.size),
       };
     } catch (error) {
       console.error("PDF export error:", error);
-      // Fallback to CSV (optional – you may remove this if you want the error to propagate)
       return await this._exportCSV(products, params);
     }
   }
 
-  /**
-   * Helper to determine column alignment based on content type
-   * @param {string} header
-   */
+  // @ts-ignore
   _getColumnAlignment(header) {
-    const centerAlign = ["Stock", "Published", "Variants Count"];
+    const centerAlign = ["Stock", "Published", "Variants"];
     const rightAlign = ["Net Price", "Cost"];
-
     if (centerAlign.includes(header)) return "center";
     if (rightAlign.includes(header)) return "right";
     return "left";
   }
 
-  /**
-   * Get supported formats for API compatibility
-   */
   getSupportedFormats() {
     return [
       {
@@ -794,12 +741,7 @@ class ProductExportHandler {
     ];
   }
 
-  // HELPER METHODS
-
-  /**
-   * Get MIME type for format
-   * @param {string} format
-   */
+  // @ts-ignore
   _getMimeType(format) {
     const mimeTypes = {
       csv: "text/csv",
@@ -811,10 +753,7 @@ class ProductExportHandler {
     return mimeTypes[format] || "application/octet-stream";
   }
 
-  /**
-   * Format file size
-   * @param {number} bytes
-   */
+  // @ts-ignore
   _formatFileSize(bytes) {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -823,9 +762,6 @@ class ProductExportHandler {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
-  /**
-   * Get product status filter options
-   */
   getProductStatusOptions() {
     return [
       { value: "published", label: "Published" },
@@ -833,9 +769,6 @@ class ProductExportHandler {
     ];
   }
 
-  /**
-   * Get low stock filter options
-   */
   getLowStockOptions() {
     return [
       { value: "true", label: "Low Stock Only" },
@@ -844,10 +777,8 @@ class ProductExportHandler {
   }
 }
 
-// Create and export handler instance
 const productExportHandler = new ProductExportHandler();
 
-// Register IPC handler if in Electron environment
 if (ipcMain) {
   ipcMain.handle("productExport", async (event, payload) => {
     return await productExportHandler.handleRequest(event, payload);
@@ -858,5 +789,4 @@ if (ipcMain) {
   );
 }
 
-// Export for use in other modules
 module.exports = { ProductExportHandler, productExportHandler };

@@ -18,12 +18,10 @@ class WarehouseExportHandler {
       "warehouse_exports",
     );
 
-    // Create export directory if it doesn't exist
     if (!fs.existsSync(this.EXPORT_DIR)) {
       fs.mkdirSync(this.EXPORT_DIR, { recursive: true });
     }
 
-    // Initialize ExcelJS if available
     this.excelJS = null;
     this._initializeExcelJS();
   }
@@ -40,9 +38,6 @@ class WarehouseExportHandler {
     }
   }
 
-  /**
-   * Main request handler
-   */
   // @ts-ignore
   async handleRequest(event, payload) {
     try {
@@ -80,9 +75,6 @@ class WarehouseExportHandler {
     }
   }
 
-  /**
-   * Export warehouses in specified format
-   */
   // @ts-ignore
   async exportWarehouses(params) {
     try {
@@ -96,7 +88,6 @@ class WarehouseExportHandler {
         };
       }
 
-      // Get warehouse data with basic analytics
       const warehouseData = await this._getWarehouseData(params);
 
       let result;
@@ -112,7 +103,6 @@ class WarehouseExportHandler {
           break;
       }
 
-      // Read file content as base64 for transmission
       // @ts-ignore
       const filepath = path.join(this.EXPORT_DIR, result.filename);
       const fileBuffer = fs.readFileSync(filepath);
@@ -143,9 +133,6 @@ class WarehouseExportHandler {
     }
   }
 
-  /**
-   * Get export preview data
-   */
   // @ts-ignore
   async getExportPreview(params) {
     try {
@@ -155,7 +142,7 @@ class WarehouseExportHandler {
         status: true,
         message: "Export preview generated successfully",
         data: {
-          warehouses: warehouseData.warehouses.slice(0, 10), // Limit preview to 10 items
+          warehouses: warehouseData.warehouses.slice(0, 10),
           analytics: warehouseData.analytics,
           totalCount: warehouseData.warehouses.length,
         },
@@ -171,13 +158,24 @@ class WarehouseExportHandler {
     }
   }
 
-  /**
-   * Get warehouse data with basic analytics using TypeORM
-   */
   // @ts-ignore
   async _getWarehouseData(params) {
     const warehouseRepo = AppDataSource.getRepository(Warehouse);
     const stockRepo = AppDataSource.getRepository(StockItem);
+
+    // Subquery for total stock items count per warehouse
+    const stockItemsCountSubQuery = stockRepo
+      .createQueryBuilder("si")
+      .select("COUNT(DISTINCT si.id)")
+      .where("si.warehouseId = w.id")
+      .andWhere("si.is_deleted = 0");
+
+    // Subquery for total quantity per warehouse
+    const totalQuantitySubQuery = stockRepo
+      .createQueryBuilder("si")
+      .select("COALESCE(SUM(si.quantity), 0)")
+      .where("si.warehouseId = w.id")
+      .andWhere("si.is_deleted = 0");
 
     // Subquery for low stock count per warehouse
     const lowStockSubQuery = stockRepo
@@ -196,10 +194,9 @@ class WarehouseExportHandler {
       .andWhere("si.quantity = 0")
       .andWhere("si.is_deleted = 0");
 
-    // Build main query
+    // Build main query – no leftJoinAndSelect on stockItems to avoid errors
     const queryBuilder = warehouseRepo
       .createQueryBuilder("w")
-      .leftJoinAndSelect("w.stockItems", "si") // assuming relation name is stockItems
       .select([
         "w.id",
         "w.name",
@@ -208,13 +205,12 @@ class WarehouseExportHandler {
         "w.is_active",
         "w.created_at",
         "w.updated_at",
-        "COUNT(DISTINCT si.id) as stock_items_count",
-        "COALESCE(SUM(si.quantity), 0) as total_quantity",
       ])
+      .addSelect(`(${stockItemsCountSubQuery.getQuery()})`, "stock_items_count")
+      .addSelect(`(${totalQuantitySubQuery.getQuery()})`, "total_quantity")
       .addSelect(`(${lowStockSubQuery.getQuery()})`, "low_stock_count")
       .addSelect(`(${outOfStockSubQuery.getQuery()})`, "out_of_stock_count")
-      .where("w.is_deleted = 0")
-      .groupBy("w.id");
+      .where("w.is_deleted = 0");
 
     // Apply filters
     if (params.type && params.type !== "all") {
@@ -241,7 +237,6 @@ class WarehouseExportHandler {
 
     const warehouses = await queryBuilder.getRawMany();
 
-    // Process warehouses
     const processedWarehouses = [];
     let totalStockItems = 0;
     let totalQuantity = 0;
@@ -257,7 +252,6 @@ class WarehouseExportHandler {
       const lowStockCount = parseInt(warehouse.low_stock_count) || 0;
       const outOfStockCount = parseInt(warehouse.out_of_stock_count) || 0;
 
-      // Update analytics
       totalStockItems += stockItemsCount;
       totalQuantity += quantity;
       totalLowStock += lowStockCount;
@@ -269,12 +263,10 @@ class WarehouseExportHandler {
         inactiveWarehouses++;
       }
 
-      // Count by type
       const type = warehouse.w_type || "unknown";
       // @ts-ignore
       typeCounts[type] = (typeCounts[type] || 0) + 1;
 
-      // Add to processed list
       processedWarehouses.push({
         ID: warehouse.w_id,
         Name: warehouse.w_name || "",
@@ -294,14 +286,12 @@ class WarehouseExportHandler {
       });
     }
 
-    // Calculate basic analytics
     const totalWarehouses = warehouses.length;
     const averageStockItems =
       totalWarehouses > 0 ? (totalStockItems / totalWarehouses).toFixed(1) : 0;
     const averageQuantity =
       totalWarehouses > 0 ? (totalQuantity / totalWarehouses).toFixed(1) : 0;
 
-    // Prepare type breakdown
     const typeBreakdown = Object.entries(typeCounts).map(([type, count]) => ({
       type: this._getTypeDisplay(type),
       count,
@@ -326,19 +316,13 @@ class WarehouseExportHandler {
     };
   }
 
-  /**
-   * Export data as CSV
-   */
   // @ts-ignore
   async _exportCSV(data, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `warehouse_list_${timestamp}.csv`;
     const filepath = path.join(this.EXPORT_DIR, filename);
 
-    // Create CSV content
     let csvContent = [];
-
-    // Title and analytics summary
     csvContent.push("Warehouse List");
     csvContent.push(`Generated: ${new Date().toLocaleString()}`);
     csvContent.push(`Total Warehouses: ${data.analytics.totalWarehouses}`);
@@ -351,7 +335,6 @@ class WarehouseExportHandler {
     csvContent.push(`Out of Stock Items: ${data.analytics.totalOutOfStock}`);
     csvContent.push("");
 
-    // Type breakdown
     if (data.analytics.typeBreakdown.length > 0) {
       csvContent.push("Type Breakdown");
       csvContent.push("Type,Count,Percentage");
@@ -362,13 +345,11 @@ class WarehouseExportHandler {
       csvContent.push("");
     }
 
-    // Headers
     if (data.warehouses.length > 0) {
       const headers = Object.keys(data.warehouses[0]);
       csvContent.push(headers.join(","));
     }
 
-    // Data rows
     // @ts-ignore
     data.warehouses.forEach((warehouse) => {
       const row = Object.values(warehouse).map((value) => {
@@ -379,12 +360,7 @@ class WarehouseExportHandler {
       csvContent.push(row.join(","));
     });
 
-    const csvString = csvContent.join("\n");
-
-    // Save to file
-    fs.writeFileSync(filepath, csvString, "utf8");
-
-    // Get file stats
+    fs.writeFileSync(filepath, csvContent.join("\n"), "utf8");
     const stats = fs.statSync(filepath);
 
     return {
@@ -393,15 +369,10 @@ class WarehouseExportHandler {
     };
   }
 
-  /**
-   * Export data as Excel
-   */
   // @ts-ignore
   async _exportExcel(data, params) {
     try {
-      if (!this.excelJS) {
-        throw new Error("ExcelJS not available");
-      }
+      if (!this.excelJS) throw new Error("ExcelJS not available");
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `warehouse_list_${timestamp}.xlsx`;
@@ -411,10 +382,8 @@ class WarehouseExportHandler {
       workbook.creator = "Warehouse Management System";
       workbook.created = new Date();
 
-      // Sheet 1: Warehouse Details
       const worksheet = workbook.addWorksheet("Warehouses");
 
-      // Set default column widths
       worksheet.columns = [
         { header: "ID", key: "id", width: 10 },
         { header: "Name", key: "name", width: 25 },
@@ -429,24 +398,20 @@ class WarehouseExportHandler {
         { header: "Updated Date", key: "updated_date", width: 12 },
       ];
 
-      // Add title row
       const titleRow = worksheet.addRow(["Warehouse List"]);
       titleRow.font = { bold: true, size: 14 };
       titleRow.height = 20;
-      worksheet.mergeCells(`A1:K1`);
+      worksheet.mergeCells("A1:K1");
 
-      // Add subtitle with analytics
       const subtitleRow = worksheet.addRow([
         `Generated: ${new Date().toLocaleString()} | Total: ${data.analytics.totalWarehouses} warehouses | Active: ${data.analytics.activeWarehouses} | Inactive: ${data.analytics.inactiveWarehouses}`,
       ]);
-      worksheet.mergeCells(`A2:K2`);
+      worksheet.mergeCells("A2:K2");
       subtitleRow.font = { size: 9, italic: true };
       subtitleRow.height = 15;
 
-      // Add empty row
       worksheet.addRow([]);
 
-      // Add header row
       const headerRow = worksheet.getRow(4);
       // @ts-ignore
       headerRow.values = worksheet.columns.map((col) => col.header);
@@ -454,7 +419,7 @@ class WarehouseExportHandler {
       headerRow.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "366092" }, // Blue header
+        fgColor: { argb: "366092" },
       };
       headerRow.alignment = { horizontal: "center", vertical: "middle" };
       headerRow.height = 20;
@@ -462,7 +427,6 @@ class WarehouseExportHandler {
         bottom: { style: "thin", color: { argb: "000000" } },
       };
 
-      // Add data rows
       // @ts-ignore
       data.warehouses.forEach((warehouse, index) => {
         const row = worksheet.addRow([
@@ -479,7 +443,6 @@ class WarehouseExportHandler {
           warehouse["Updated Date"],
         ]);
 
-        // Zebra striping
         if (index % 2 === 0) {
           row.fill = {
             type: "pattern",
@@ -488,51 +451,45 @@ class WarehouseExportHandler {
           };
         }
 
-        // Center align numeric columns
-        row.getCell(6).alignment = { horizontal: "center" }; // Stock Items
-        row.getCell(7).alignment = { horizontal: "center" }; // Total Quantity
-        row.getCell(8).alignment = { horizontal: "center" }; // Low Stock
-        row.getCell(9).alignment = { horizontal: "center" }; // Out of Stock
+        row.getCell(6).alignment = { horizontal: "center" };
+        row.getCell(7).alignment = { horizontal: "center" };
+        row.getCell(8).alignment = { horizontal: "center" };
+        row.getCell(9).alignment = { horizontal: "center" };
 
-        // Color code status
         const statusCell = row.getCell(5);
         if (warehouse["Status"] === "Active") {
           statusCell.fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "C6EFCE" }, // Green
+            fgColor: { argb: "C6EFCE" },
           };
         } else {
           statusCell.fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFC7CE" }, // Red
+            fgColor: { argb: "FFC7CE" },
           };
         }
 
-        // Highlight low stock
         if (warehouse["Low Stock Items"] > 0) {
           row.getCell(8).fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFEB9C" }, // Yellow
+            fgColor: { argb: "FFEB9C" },
           };
         }
 
-        // Highlight out of stock
         if (warehouse["Out of Stock Items"] > 0) {
           row.getCell(9).fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFC7CE" }, // Red
+            fgColor: { argb: "FFC7CE" },
           };
         }
       });
 
-      // Freeze header row
       worksheet.views = [{ state: "frozen", ySplit: 4 }];
 
-      // Add auto-filter
       if (data.warehouses.length > 0) {
         worksheet.autoFilter = {
           from: { row: 4, column: 1 },
@@ -540,9 +497,7 @@ class WarehouseExportHandler {
         };
       }
 
-      // Sheet 2: Analytics Summary
       const analyticsSheet = workbook.addWorksheet("Analytics");
-
       analyticsSheet.columns = [
         { header: "Metric", key: "metric", width: 25 },
         { header: "Value", key: "value", width: 15 },
@@ -601,7 +556,6 @@ class WarehouseExportHandler {
         analyticsSheet.addRow([item.metric, item.value, item.details]);
       });
 
-      // Add Type Breakdown section
       analyticsSheet.addRow([]);
       analyticsSheet.addRow(["Type Breakdown"]);
       const headerRow2 = analyticsSheet.addRow(["Type", "Count", "Percentage"]);
@@ -625,9 +579,6 @@ class WarehouseExportHandler {
     }
   }
 
-  /**
-   * Export data as PDF
-   */
   // @ts-ignore
   async _exportPDF(data, params) {
     try {
@@ -643,7 +594,6 @@ class WarehouseExportHandler {
       const filename = `warehouse_list_${timestamp}.pdf`;
       const filepath = path.join(this.EXPORT_DIR, filename);
 
-      // Create a PDF document
       const doc = new PDFKit({
         size: "A4",
         layout: "landscape",
@@ -653,13 +603,12 @@ class WarehouseExportHandler {
           Author: "Warehouse Management System",
           CreationDate: new Date(),
         },
+        bufferPages: true,
       });
 
-      // Pipe to file
       const writeStream = fs.createWriteStream(filepath);
       doc.pipe(writeStream);
 
-      // Title
       doc.fontSize(14).font("Helvetica-Bold").text("Warehouse List", {
         align: "center",
       });
@@ -669,12 +618,9 @@ class WarehouseExportHandler {
         .font("Helvetica")
         .text(
           `Generated: ${new Date().toLocaleDateString()} | Total: ${data.analytics.totalWarehouses} warehouses`,
-          {
-            align: "center",
-          },
+          { align: "center" },
         );
 
-      // Analytics summary
       doc.moveDown(0.5);
       doc.fontSize(10).font("Helvetica-Bold").text("Summary:");
       doc
@@ -704,25 +650,26 @@ class WarehouseExportHandler {
         };
       }
 
-      // Calculate table dimensions
       const pageWidth = 842;
+      const pageHeight = 595;
       const leftMargin = 20;
       const rightMargin = 20;
       const topMargin = doc.y;
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
-      // Define column widths
+      // ✅ Enhanced column widths – total = 100%
       const columnWidths = [
-        availableWidth * 0.07, // ID
-        availableWidth * 0.15, // Name
+        availableWidth * 0.05, // ID
+        availableWidth * 0.14, // Name
         availableWidth * 0.12, // Location
-        availableWidth * 0.1, // Type
-        availableWidth * 0.08, // Status
-        availableWidth * 0.1, // Stock Items
-        availableWidth * 0.1, // Total Quantity
-        availableWidth * 0.08, // Low Stock
-        availableWidth * 0.1, // Out of Stock
-        availableWidth * 0.1, // Created Date
+        availableWidth * 0.08, // Type
+        availableWidth * 0.06, // Status
+        availableWidth * 0.08, // Stock Items
+        availableWidth * 0.08, // Total Quantity
+        availableWidth * 0.07, // Low Stock
+        availableWidth * 0.08, // Out of Stock
+        availableWidth * 0.07, // Created Date
+        availableWidth * 0.07, // Updated Date
       ];
 
       const rowHeight = 15;
@@ -734,13 +681,14 @@ class WarehouseExportHandler {
         "Type",
         "Status",
         "Stock Items",
-        "Total Quantity",
+        "Total Qty",
         "Low Stock",
         "Out of Stock",
         "Created",
+        "Updated",
       ];
 
-      // Draw header row
+      // Draw header
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
         .fillColor("#366092")
@@ -752,29 +700,22 @@ class WarehouseExportHandler {
       headers.forEach((header, i) => {
         doc.text(header, xPos + 3, currentY + 4, {
           width: columnWidths[i] - 6,
-          align: "left",
+          align: i === 0 ? "center" : "left", // ID centered
         });
         xPos += columnWidths[i];
       });
 
       currentY += rowHeight;
-
-      // Draw data rows
       doc.fontSize(8).font("Helvetica");
 
       for (let i = 0; i < data.warehouses.length; i++) {
         const warehouse = data.warehouses[i];
 
-        // Check if we need a new page
-        if (currentY + rowHeight > 575) {
-          doc.addPage({
-            size: "A4",
-            layout: "landscape",
-            margin: 20,
-          });
+        if (currentY + rowHeight > pageHeight - 20) {
+          doc.addPage({ size: "A4", layout: "landscape", margin: 20 });
           currentY = 20;
 
-          // Redraw header on new page
+          // Redraw header
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
             .fillColor("#366092")
@@ -785,7 +726,7 @@ class WarehouseExportHandler {
           headers.forEach((header, j) => {
             doc.text(header, xPos + 3, currentY + 4, {
               width: columnWidths[j] - 6,
-              align: "left",
+              align: j === 0 ? "center" : "left",
             });
             xPos += columnWidths[j];
           });
@@ -802,7 +743,24 @@ class WarehouseExportHandler {
             .fill();
         }
 
-        // Draw cell content
+        // Cell borders
+        doc.lineWidth(0.2);
+        xPos = leftMargin;
+        for (let j = 0; j < columnWidths.length; j++) {
+          doc
+            .moveTo(xPos, currentY)
+            .lineTo(xPos, currentY + rowHeight)
+            .strokeColor("#CCCCCC")
+            .stroke();
+          xPos += columnWidths[j];
+        }
+        doc
+          .moveTo(leftMargin, currentY + rowHeight)
+          .lineTo(leftMargin + availableWidth, currentY + rowHeight)
+          .strokeColor("#CCCCCC")
+          .stroke();
+
+        // Cell content
         doc.fillColor("#000000");
         xPos = leftMargin;
 
@@ -817,82 +775,78 @@ class WarehouseExportHandler {
           warehouse["Low Stock Items"],
           warehouse["Out of Stock Items"],
           warehouse["Created Date"],
+          warehouse["Updated Date"],
         ];
 
         warehouseData.forEach((value, j) => {
           let cellValue = String(value);
 
-          // Truncate text if too long
+          // Truncate long text
           if (j === 1 && cellValue.length > 20) {
-            // Name
             cellValue = cellValue.substring(0, 17) + "...";
-          } else if (j === 2 && cellValue.length > 15) {
-            // Location
-            cellValue = cellValue.substring(0, 12) + "...";
+          } else if (j === 2 && cellValue.length > 18) {
+            cellValue = cellValue.substring(0, 15) + "...";
           }
 
-          // Status color coding
+          // Color coding
           if (j === 4) {
-            // Status column
+            // Status
             if (cellValue === "Active") {
               doc.fillColor("green");
             } else {
               doc.fillColor("red");
             }
-          }
-
-          // Highlight low stock in yellow
-          if (j === 7 && parseInt(cellValue) > 0) {
+          } else if (j === 7 && parseInt(cellValue) > 0) {
             // Low Stock
             doc.fillColor("orange");
-          }
-
-          // Highlight out of stock in red
-          if (j === 8 && parseInt(cellValue) > 0) {
+          } else if (j === 8 && parseInt(cellValue) > 0) {
             // Out of Stock
             doc.fillColor("red");
+          } else {
+            doc.fillColor("#000000");
           }
 
           doc.text(cellValue, xPos + 3, currentY + 4, {
             width: columnWidths[j] - 6,
-            align: "left",
+            align: j === 0 ? "center" : "left",
           });
 
-          // Reset color
           doc.fillColor("#000000");
-
           xPos += columnWidths[j];
         });
 
         currentY += rowHeight;
       }
 
-      // Add footer
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      // ✅ FIXED: Footer with 1‑based page numbers
+      const range = doc.bufferedPageRange();
+      const start = range.start || 0;
+      const count = range.count || 0;
+      for (let p = start; p < start + count; p++) {
+        doc.switchToPage(p);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${i + 1} of ${pageCount}`, leftMargin, 575, {
-            align: "right",
-            width: availableWidth,
-          });
+          .text(
+            `Page ${p - start + 1} of ${count}`,
+            leftMargin,
+            pageHeight - 15,
+            {
+              align: "right",
+              width: availableWidth,
+            },
+          );
       }
 
-      // Finalize PDF
       doc.end();
 
-      // Wait for write to complete
       await new Promise((resolve, reject) => {
         // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
 
-      // Get file stats
       const stats = fs.statSync(filepath);
-
       return {
         filename: filename,
         fileSize: this._formatFileSize(stats.size),
@@ -903,9 +857,6 @@ class WarehouseExportHandler {
     }
   }
 
-  /**
-   * Get supported formats for API compatibility
-   */
   getSupportedFormats() {
     return [
       {
@@ -928,9 +879,6 @@ class WarehouseExportHandler {
     ];
   }
 
-  /**
-   * Get warehouse type filter options
-   */
   getWarehouseTypeOptions() {
     return [
       { value: "all", label: "All Types" },
@@ -940,9 +888,6 @@ class WarehouseExportHandler {
     ];
   }
 
-  /**
-   * Get status filter options
-   */
   getStatusOptions() {
     return [
       { value: "all", label: "All Statuses" },
@@ -950,8 +895,6 @@ class WarehouseExportHandler {
       { value: "inactive", label: "Inactive" },
     ];
   }
-
-  // HELPER METHODS
 
   // @ts-ignore
   _getTypeDisplay(type) {
@@ -986,10 +929,8 @@ class WarehouseExportHandler {
   }
 }
 
-// Create and export handler instance
 const warehouseExportHandler = new WarehouseExportHandler();
 
-// Register IPC handler if in Electron environment
 if (ipcMain) {
   ipcMain.handle("warehouseExport", async (event, payload) => {
     return await warehouseExportHandler.handleRequest(event, payload);
@@ -1000,5 +941,4 @@ if (ipcMain) {
   );
 }
 
-// Export for use in other modules
 module.exports = { WarehouseExportHandler, warehouseExportHandler };

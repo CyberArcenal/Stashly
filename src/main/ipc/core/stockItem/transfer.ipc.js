@@ -128,7 +128,12 @@ module.exports = async (params, queryRunner, user = "system") => {
       movement_type: "transfer_out",
       reference_code: `TRANSFER-${sourceId}-${destId}`,
       reason: params.reason || "Stock transfer",
-      metadata: JSON.stringify({ destinationStockItemId: destId }),
+      metadata: JSON.stringify({
+        sourceStockItemId: sourceId,
+        destinationStockItemId: destId,
+        to_warehouse_id: destItem.warehouse.id,
+        from_warehouse_id: sourceItem.warehouse.id,
+      }),
       current_quantity: sourceItem.quantity,
       created_at: new Date(),
       updated_at: new Date(),
@@ -144,6 +149,7 @@ module.exports = async (params, queryRunner, user = "system") => {
       reason: params.reason || "Stock transfer",
       metadata: JSON.stringify({
         sourceStockItemId: sourceId,
+        destinationStockItemId: destId,
         to_warehouse_id: destItem.warehouse.id,
         from_warehouse_id: sourceItem.warehouse.id,
       }),

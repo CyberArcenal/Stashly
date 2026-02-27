@@ -11,16 +11,18 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { dialogs } from "../../utils/dialogs";
-import notificationAPI from "../../api/core/notifications";
+import notificationAPI, { type Notification } from "../../api/core/notifications";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  onUnreadCountChange?: (count: number) => void; // callback to update TopBar badge
 }
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   isOpen,
   onClose,
+  onUnreadCountChange,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -31,7 +33,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const limit = 15;
 
-  // Reset to page 1 and clear notifications when drawer opens
+  // Reset when drawer opens
   useEffect(() => {
     if (isOpen) {
       setPage(1);
@@ -40,10 +42,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     }
   }, [isOpen]);
 
-  // Fetch notifications whenever page changes (only if drawer is open)
+  // Fetch notifications on page change
   useEffect(() => {
     if (!isOpen) return;
-    fetchNotifications(page === 1); // reset = true only for page 1
+    fetchNotifications(page === 1);
   }, [page, isOpen]);
 
   const fetchNotifications = async (reset: boolean = false) => {
@@ -74,7 +76,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     try {
       const response = await notificationAPI.getUnreadCount();
       if (response.status) {
-        setUnreadCount(response.data.unreadCount);
+        setUnreadCount(response.data); // fixed: data is a number, not an object
+        onUnreadCountChange?.(response.data);
       }
     } catch (err) {
       console.error("Failed to fetch unread count", err);
@@ -88,7 +91,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
         );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        const newUnreadCount = Math.max(0, unreadCount - 1);
+        setUnreadCount(newUnreadCount);
+        onUnreadCountChange?.(newUnreadCount);
       } else {
         throw new Error(response.message);
       }
@@ -103,6 +108,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       if (response.status) {
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         setUnreadCount(0);
+        onUnreadCountChange?.(0);
       } else {
         throw new Error(response.message);
       }
@@ -121,10 +127,13 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     try {
       const response = await notificationAPI.delete(id);
       if (response.status) {
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-        // if it was unread, decrease count
         const wasUnread = notifications.find((n) => n.id === id)?.isRead === false;
-        if (wasUnread) setUnreadCount((prev) => Math.max(0, prev - 1));
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        if (wasUnread) {
+          const newUnreadCount = Math.max(0, unreadCount - 1);
+          setUnreadCount(newUnreadCount);
+          onUnreadCountChange?.(newUnreadCount);
+        }
       } else {
         throw new Error(response.message);
       }

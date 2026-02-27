@@ -191,11 +191,10 @@ class OrderExportHandler {
   async _getBaseOrdersData(params) {
     const orderRepo = AppDataSource.getRepository(Order);
 
-    // Build query builder
+    // Build query builder - join with customer (not user)
     const queryBuilder = orderRepo
       .createQueryBuilder("o")
-      .leftJoinAndSelect("o.customer", "u") // customer relation
-      .leftJoinAndSelect("o.proceedBy", "p") // proceed_by relation (assuming it exists)
+      .leftJoinAndSelect("o.customer", "c") // customer relation
       .select([
         "o.id",
         "o.order_number",
@@ -206,15 +205,10 @@ class OrderExportHandler {
         "o.created_at",
         "o.updated_at",
         "o.inventory_processed",
-        "u.username",
-        "u.email",
-        "u.first_name",
-        "u.last_name",
-        "p.username",
-        "p.first_name",
-        "p.last_name",
+        "c.name as customer_name",
+        "c.email as customer_email",
         // Subquery for items count
-        "(SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id AND oi.is_deleted = 0) as items_count",
+        "(SELECT COUNT(*) FROM order_items oi WHERE oi.orderId = o.id AND oi.is_deleted = 0) as items_count",
       ])
       .where("o.is_deleted = 0");
 
@@ -235,7 +229,7 @@ class OrderExportHandler {
     if (params.search) {
       const searchTerm = `%${params.search}%`;
       queryBuilder.andWhere(
-        "(o.order_number LIKE :search OR u.username LIKE :search OR u.email LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search)",
+        "(o.order_number LIKE :search OR c.name LIKE :search OR c.email LIKE :search)",
         { search: searchTerm },
       );
     }
@@ -244,25 +238,13 @@ class OrderExportHandler {
 
     const orders = await queryBuilder.getRawMany();
 
-    // Process orders to match original output
+    // Process orders
     const processedOrders = [];
     for (const order of orders) {
-      // Calculate customer name
-      const customerName =
-        order.u_first_name || order.u_last_name
-          ? `${order.u_first_name || ""} ${order.u_last_name || ""}`.trim()
-          : order.u_username || order.u_email || "N/A";
-
-      // Calculate processed by name
-      const proceedByName =
-        order.p_first_name || order.p_last_name
-          ? `${order.p_first_name || ""} ${order.p_last_name || ""}`.trim()
-          : order.p_username || "N/A";
-
       processedOrders.push({
         "Order Number": order.o_order_number,
-        Customer: customerName,
-        Email: order.u_email || "N/A",
+        Customer: order.customer_name || "N/A",
+        Email: order.customer_email || "N/A",
         Status: this._getStatusDisplay(order.o_status),
         Subtotal: parseFloat(order.o_subtotal || 0).toFixed(2),
         Tax: parseFloat(order.o_tax_amount || 0).toFixed(2),
@@ -270,7 +252,7 @@ class OrderExportHandler {
         "Date Created": new Date(order.o_created_at).toLocaleDateString(),
         "Items Count": order.items_count || 0,
         "Inventory Processed": order.o_inventory_processed === 1 ? "Yes" : "No",
-        "Processed By": proceedByName,
+        "Processed By": "System", // offline, default
       });
     }
 
@@ -282,6 +264,7 @@ class OrderExportHandler {
    * @param {any[]} orders
    * @param {any} params
    */
+  // @ts-ignore
   async _exportCSV(orders, params) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `order_list_${timestamp}.csv`;
@@ -301,7 +284,6 @@ class OrderExportHandler {
     csvContent.push(headers.join(","));
 
     // Data rows
-    // @ts-ignore
     orders.forEach((order) => {
       const row = headers.map((header) => {
         const value = order[header];
@@ -497,23 +479,24 @@ class OrderExportHandler {
       const filename = `order_list_${timestamp}.pdf`;
       const filepath = path.join(this.EXPORT_DIR, filename);
 
-      // Create a PDF document with landscape orientation for better table fit
+      // Create a PDF document with landscape orientation
       const doc = new PDFKit({
         size: "A4",
-        layout: "landscape", // Use landscape for better table fit
+        layout: "landscape",
         margin: 20,
         info: {
           Title: "Order List",
           Author: "Order Management System",
           CreationDate: new Date(),
         },
+        bufferPages: true,
       });
 
       // Pipe to file
       const writeStream = fs.createWriteStream(filepath);
       doc.pipe(writeStream);
 
-      // Title - more compact
+      // Title
       doc.fontSize(14).font("Helvetica-Bold").text("Order List", {
         align: "center",
       });
@@ -523,9 +506,7 @@ class OrderExportHandler {
         .font("Helvetica")
         .text(
           `Generated: ${new Date().toLocaleDateString()} | Total: ${orders.length} orders`,
-          {
-            align: "center",
-          },
+          { align: "center" },
         );
 
       doc.moveDown(0.5);
@@ -547,36 +528,36 @@ class OrderExportHandler {
       }
 
       // Calculate table dimensions
-      const pageWidth = 842; // A4 landscape width in points
-      const pageHeight = 595; // A4 landscape height in points
+      const pageWidth = 842; // A4 landscape width
+      const pageHeight = 595;
       const leftMargin = 20;
       const rightMargin = 20;
       const topMargin = doc.y;
       const availableWidth = pageWidth - leftMargin - rightMargin;
 
-      // Define column widths as percentages of available width (11 columns)
+      // Define column widths (11 columns)
       const columnWidths = [
-        availableWidth * 0.1, // Order Number (10%)
-        availableWidth * 0.15, // Customer (15%)
-        availableWidth * 0.12, // Email (12%)
-        availableWidth * 0.08, // Status (8%)
-        availableWidth * 0.07, // Subtotal (7%)
-        availableWidth * 0.06, // Tax (6%)
-        availableWidth * 0.07, // Total (7%)
-        availableWidth * 0.08, // Date Created (8%)
-        availableWidth * 0.06, // Items Count (6%)
-        availableWidth * 0.08, // Inventory Processed (8%)
-        availableWidth * 0.13, // Processed By (13%)
+        availableWidth * 0.1, // Order Number
+        availableWidth * 0.15, // Customer
+        availableWidth * 0.12, // Email
+        availableWidth * 0.08, // Status
+        availableWidth * 0.07, // Subtotal
+        availableWidth * 0.06, // Tax
+        availableWidth * 0.07, // Total
+        availableWidth * 0.08, // Date Created
+        availableWidth * 0.06, // Items Count
+        availableWidth * 0.08, // Inventory Processed
+        availableWidth * 0.13, // Processed By
       ];
 
-      const rowHeight = 15; // Reduced row height for compactness
+      const rowHeight = 15;
       let currentY = topMargin;
       const headers = Object.keys(orders[0]);
 
-      // Draw header row with background
+      // Draw header row
       doc
         .rect(leftMargin, currentY, availableWidth, rowHeight)
-        .fillColor("#4A6FA5") // Blue header
+        .fillColor("#4A6FA5")
         .fill();
 
       doc.fillColor("white").fontSize(8).font("Helvetica-Bold");
@@ -592,22 +573,22 @@ class OrderExportHandler {
 
       currentY += rowHeight;
 
-      // Draw data rows with zebra striping
+      // Data rows
       doc.fontSize(8).font("Helvetica");
 
       for (let i = 0; i < orders.length; i++) {
         const order = orders[i];
 
-        // Check if we need a new page
+        // New page if needed
         if (currentY + rowHeight > pageHeight - 20) {
           doc.addPage({
             size: "A4",
             layout: "landscape",
             margin: 20,
           });
-          currentY = 20; // Reset Y position for new page
+          currentY = 20;
 
-          // Redraw header on new page
+          // Redraw header
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
             .fillColor("#4A6FA5")
@@ -631,16 +612,16 @@ class OrderExportHandler {
         if (i % 2 === 0) {
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
-            .fillColor("#F8F9FA") // Light gray for even rows
+            .fillColor("#F8F9FA")
             .fill();
         } else {
           doc
             .rect(leftMargin, currentY, availableWidth, rowHeight)
-            .fillColor("#FFFFFF") // White for odd rows
+            .fillColor("#FFFFFF")
             .fill();
         }
 
-        // Draw cell borders (thin lines)
+        // Draw cell borders
         doc.lineWidth(0.2);
         xPos = leftMargin;
         for (let j = 0; j < columnWidths.length; j++) {
@@ -651,7 +632,6 @@ class OrderExportHandler {
             .stroke();
           xPos += columnWidths[j];
         }
-        // Bottom border
         doc
           .moveTo(leftMargin, currentY + rowHeight)
           .lineTo(leftMargin + availableWidth, currentY + rowHeight)
@@ -659,7 +639,7 @@ class OrderExportHandler {
           .stroke();
 
         // Draw cell content
-        doc.fillColor("#000000"); // Black text
+        doc.fillColor("#000000");
         xPos = leftMargin;
 
         headers.forEach((header, j) => {
@@ -674,7 +654,7 @@ class OrderExportHandler {
             cellValue = cellValue.substring(0, 12) + "...";
           }
 
-          // Format currency values
+          // Format currency
           if (
             (header === "Subtotal" || header === "Tax" || header === "Total") &&
             cellValue !== "N/A"
@@ -685,11 +665,11 @@ class OrderExportHandler {
           // Color code status
           if (header === "Status") {
             if (cellValue === "Completed") {
-              doc.fillColor("#2E7D32"); // Dark green
+              doc.fillColor("#2E7D32");
             } else if (cellValue === "Pending") {
-              doc.fillColor("#F57C00"); // Orange
+              doc.fillColor("#F57C00");
             } else if (cellValue === "Cancelled") {
-              doc.fillColor("#C62828"); // Dark red
+              doc.fillColor("#C62828");
             } else {
               doc.fillColor("#000000");
             }
@@ -708,39 +688,41 @@ class OrderExportHandler {
         currentY += rowHeight;
       }
 
-      // Add footer with page number
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      // ✅ FIXED: Footer with 1‑based page numbers
+      const range = doc.bufferedPageRange();
+      const start = range.start || 0;
+      const count = range.count || 0;
+      for (let p = start; p < start + count; p++) {
+        doc.switchToPage(p);
         doc
           .fontSize(7)
           .fillColor("#666666")
-          .text(`Page ${i + 1} of ${pageCount}`, leftMargin, pageHeight - 15, {
-            align: "right",
-            width: availableWidth,
-          });
+          .text(
+            `Page ${p - start + 1} of ${count}`,
+            leftMargin,
+            pageHeight - 15,
+            {
+              align: "right",
+              width: availableWidth,
+            },
+          );
       }
 
-      // Finalize PDF
       doc.end();
 
-      // Wait for write to complete
       await new Promise((resolve, reject) => {
         // @ts-ignore
         writeStream.on("finish", resolve);
         writeStream.on("error", reject);
       });
 
-      // Get file stats
       const stats = fs.statSync(filepath);
-
       return {
         filename: filename,
         fileSize: this._formatFileSize(stats.size),
       };
     } catch (error) {
       console.error("PDF export error:", error);
-      // Fallback to CSV
       return await this._exportCSV(orders, params);
     }
   }
@@ -829,12 +811,11 @@ class OrderExportHandler {
       );
 
       // Parse filters_json
-      const parsedHistory = history.map(
-        (/** @type {{ filters_json: string; }} */ item) => ({
-          ...item,
-          filters: item.filters_json ? JSON.parse(item.filters_json) : {},
-        }),
-      );
+      // @ts-ignore
+      const parsedHistory = history.map((item) => ({
+        ...item,
+        filters: item.filters_json ? JSON.parse(item.filters_json) : {},
+      }));
 
       return {
         status: true,
@@ -920,14 +901,11 @@ class OrderExportHandler {
       );
 
       // Parse filters_json
-      const parsedTemplates = templates.map(
-        (/** @type {{ filters_json: string; }} */ template) => ({
-          ...template,
-          filters: template.filters_json
-            ? JSON.parse(template.filters_json)
-            : {},
-        }),
-      );
+      // @ts-ignore
+      const parsedTemplates = templates.map((template) => ({
+        ...template,
+        filters: template.filters_json ? JSON.parse(template.filters_json) : {},
+      }));
 
       return {
         status: true,

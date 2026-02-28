@@ -6,83 +6,261 @@ const crypto = require("crypto");
 const os = require("os");
 const { activationClient } = require("../utils/activationClient");
 const { AppDataSource } = require("../main/db/datasource");
+const { execSync } = require("child_process");
+const fs = require("fs");
+// @ts-ignore
+const path = require("path");
 
-// DeviceInfo class moved here
 class DeviceInfo {
+  /**
+   * Get machine ID based on platform
+   * @returns {Promise<string>}
+   */
   static async getMachineId() {
     try {
-      const interfaces = os.networkInterfaces();
-      let macAddress = "";
+      const platform = process.platform;
+      let machineId = "";
 
-      for (const ifaceName in interfaces) {
-        const iface = interfaces[ifaceName];
-        // @ts-ignore
-        for (const entry of iface) {
-          if (
-            !entry.internal &&
-            entry.mac &&
-            entry.mac !== "00:00:00:00:00:00"
-          ) {
-            macAddress = entry.mac;
-            break;
-          }
-        }
-        if (macAddress) break;
+      switch (platform) {
+        case "win32":
+          machineId = await this.getWindowsMachineId();
+          break;
+        case "darwin":
+          machineId = await this.getMacMachineId();
+          break;
+        case "linux":
+          machineId = await this.getLinuxMachineId();
+          break;
+        default:
+          machineId = await this.getFallbackId();
       }
 
-      const machineInfo = {
-        hostname: os.hostname(),
-        platform: os.platform(),
-        arch: os.arch(),
-        macAddress: macAddress,
-        totalMem: os.totalmem(),
-        cpus: os.cpus().length,
-      };
+      // Combine with MAC address
+      const macAddress = await this.getMacAddress();
+      const combined = `${machineId}:${macAddress}`;
 
-      const hash = crypto.createHash("sha256");
-      hash.update(JSON.stringify(machineInfo));
-      return hash.digest("hex").substring(0, 32);
+      // Create SHA256 hash
+      return crypto
+        .createHash("sha256")
+        .update(combined)
+        .digest("hex")
+        .toUpperCase();
     } catch (error) {
-      return crypto.randomBytes(16).toString("hex");
+      console.error("Error getting machine ID:", error);
+      return this.getFallbackId();
     }
   }
 
-  static async getDeviceFingerprint() {
+  /**
+   * Get Windows machine ID
+   * @returns {Promise<string>}
+   */
+  static async getWindowsMachineId() {
     try {
-      const machineId = await this.getMachineId();
-      const interfaces = os.networkInterfaces();
+      const stdout = execSync("wmic csproduct get uuid", {
+        encoding: "utf-8",
+        windowsHide: true,
+      });
+      const lines = stdout.split("\n");
+      return lines[1]?.trim() || "";
+    } catch {
+      // Fallback to serial number
+      try {
+        const stdout = execSync("wmic bios get serialnumber", {
+          encoding: "utf-8",
+          windowsHide: true,
+        });
+        const lines = stdout.split("\n");
+        return lines[1]?.trim() || "";
+      } catch {
+        return os.hostname();
+      }
+    }
+  }
+
+  static async getSerialNumber() {
+    try {
+      const platform = process.platform;
+      if (platform === "win32") {
+        const stdout = execSync("wmic bios get serialnumber", {
+          encoding: "utf-8",
+          windowsHide: true,
+        });
+        const lines = stdout.split("\n");
+        return lines[1]?.trim() || null;
+      } else if (platform === "darwin") {
+        const stdout = execSync(
+          "ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformSerialNumber",
+          { encoding: "utf-8" },
+        );
+        const match = stdout.match(/"IOPlatformSerialNumber" = "([^"]+)"/);
+        return match ? match[1] : null;
+      } else if (platform === "linux") {
+        // Try reading DMI info (may require root, fallback to null)
+        try {
+          const stdout = execSync(
+            "dmidecode -s system-serial-number 2>/dev/null",
+            { encoding: "utf-8" },
+          );
+          return stdout.trim() || null;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Get macOS machine ID
+   * @returns {Promise<string>}
+   */
+  static async getMacMachineId() {
+    try {
+      const stdout = execSync(
+        "ioreg -rd1 -c IOPlatformExpertDevice | grep -E '(UUID|IOPlatformSerialNumber)'",
+        { encoding: "utf-8" },
+      );
+      const match = stdout.match(/"IOPlatformSerialNumber" = "([^"]+)"/);
+      return match ? match[1] : os.hostname();
+    } catch {
+      return os.hostname();
+    }
+  }
+
+  /**
+   * Get Linux machine ID
+   * @returns {Promise<string>}
+   */
+  static async getLinuxMachineId() {
+    try {
+      // Try /etc/machine-id first
+      if (fs.existsSync("/etc/machine-id")) {
+        const content = fs.readFileSync("/etc/machine-id", "utf-8").trim();
+        if (content) return content;
+      }
+
+      // Try /var/lib/dbus/machine-id
+      if (fs.existsSync("/var/lib/dbus/machine-id")) {
+        const content = fs
+          .readFileSync("/var/lib/dbus/machine-id", "utf-8")
+          .trim();
+        if (content) return content;
+      }
+
+      return os.hostname();
+    } catch {
+      return os.hostname();
+    }
+  }
+
+  /**
+   * Get fallback ID
+   * @returns {string}
+   */
+  static getFallbackId() {
+    const hostname = os.hostname();
+    const arch = os.arch();
+    const totalMem = os.totalmem();
+
+    const combined = `${hostname}:${arch}:${totalMem}`;
+    return crypto
+      .createHash("md5")
+      .update(combined)
+      .digest("hex")
+      .toUpperCase();
+  }
+
+  /**
+   * Get MAC address
+   * @returns {Promise<string>}
+   */
+  static async getMacAddress() {
+    try {
+      const networkInterfaces = os.networkInterfaces();
       let macAddress = "";
 
-      for (const ifaceName in interfaces) {
-        const iface = interfaces[ifaceName];
+      for (const interfaceName in networkInterfaces) {
+        const interfaces = networkInterfaces[interfaceName];
         // @ts-ignore
-        for (const entry of iface) {
+        for (const iface of interfaces) {
           if (
-            !entry.internal &&
-            entry.mac &&
-            entry.mac !== "00:00:00:00:00:00"
+            !iface.internal &&
+            iface.mac &&
+            iface.mac !== "00:00:00:00:00:00"
           ) {
-            macAddress = entry.mac;
+            macAddress = iface.mac;
             break;
           }
         }
         if (macAddress) break;
       }
 
-      return {
-        deviceId: machineId,
-        deviceName: os.hostname(),
-        platform: os.platform(),
-        arch: os.arch(),
-        hostname: os.hostname(),
-        macAddress: macAddress,
-        serialNumber: null,
-        cpuId: null,
-      };
-    } catch (error) {
-      // @ts-ignore
-      throw new Error(`Failed to get device fingerprint: ${error.message}`);
+      return macAddress || "00:00:00:00:00:00";
+    } catch {
+      return "00:00:00:00:00:00";
     }
+  }
+
+  /**
+   * Get device fingerprint
+   * @returns {Promise<{
+   *   deviceId: string,
+   *   platform: string,
+   *   hostname: string,
+   *   macAddress: string,
+   *   cpuArch: string,
+   *   totalMemory: number
+   * }>}
+   */
+  static async getDeviceFingerprint() {
+    const deviceId = await this.getMachineId();
+    const macAddress = await this.getMacAddress();
+
+    return {
+      deviceId,
+      platform: process.platform,
+      hostname: os.hostname(),
+      macAddress,
+      cpuArch: os.arch(),
+      totalMemory: os.totalmem(),
+      // @ts-ignore
+      cpuCount: os.cpus().length,
+      homeDir: os.homedir(),
+      tempDir: os.tmpdir(),
+    };
+  }
+
+  /**
+   * Generate activation request data
+   * @returns {Promise<{
+   *   deviceId: string,
+   *   timestamp: string,
+   *   appVersion: string,
+   *   data: string
+   * }>}
+   */
+  static async generateActivationRequest() {
+    const fingerprint = await this.getDeviceFingerprint();
+    const timestamp = new Date().toISOString();
+
+    // Create a hash of the fingerprint
+    const dataString = JSON.stringify(fingerprint);
+    const hash = crypto
+      .createHash("sha256")
+      .update(dataString + timestamp)
+      .digest("hex");
+
+    return {
+      deviceId: fingerprint.deviceId,
+      timestamp,
+      appVersion: require("../../package.json").version,
+      data: dataString,
+      // @ts-ignore
+      hash,
+    };
   }
 }
 
@@ -180,8 +358,11 @@ class LicenseService {
           expiresAt: license.expires_at,
           remainingDays: daysRemaining,
           activatedAt: license.activated_at,
-          features: features,
-          limits: limits,
+          // 👇 Add trialStartedAt
+          trialStartedAt:
+            license.license_type === "trial" ? license.activated_at : null,
+          features,
+          limits,
           deviceId: license.device_id,
         },
       };
@@ -779,10 +960,24 @@ class LicenseService {
 
   async getDeviceInfo() {
     const os = require("os");
+    // ⚠️ Add await here – getDeviceFingerprint() is async
+    const deviceInfo = await DeviceInfo.getDeviceFingerprint();
+
+    // Also obtain serialNumber (add method to DeviceInfo if not already present)
+    const serialNumber = await DeviceInfo.getSerialNumber(); // see step 2
+
     return {
-      hostname: os.hostname(),
+      // Required by DeviceInfoData in activation.ts
+      deviceId: deviceInfo.deviceId,
+      deviceName: os.hostname(),
       platform: os.platform(),
       arch: os.arch(),
+      hostname: os.hostname(),
+      macAddress: deviceInfo.macAddress,
+      serialNumber: serialNumber, // now explicitly set
+      cpuId: "", // still empty, but present
+
+      // Optional extra fields (kept for compatibility)
       total_memory: os.totalmem(),
       free_memory: os.freemem(),
       cpus: os.cpus().length,

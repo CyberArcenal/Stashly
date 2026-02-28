@@ -28,6 +28,10 @@ const AdjustmentsTable: React.FC<AdjustmentsTableProps> = ({
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
+  function onView(movement: MovementWithDetails) {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div
       className="overflow-x-auto rounded-md border"
@@ -96,6 +100,7 @@ const AdjustmentsTable: React.FC<AdjustmentsTableProps> = ({
           {movements.map((movement) => (
             <tr
               key={movement.id}
+              onClick={(e) =>{e.stopPropagation(); onView(movement)}}
               className="hover:bg-[var(--card-secondary-bg)] transition-colors"
               style={{ borderBottom: "1px solid var(--border-color)" }}
             >

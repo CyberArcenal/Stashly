@@ -48,7 +48,7 @@ const StockItem = new EntitySchema({
     movements: {
       target: "StockMovement",
       type: "one-to-many",
-      mappedBy: "stockItem",
+      inverseSide: "stockItem",
     },
   },
 });

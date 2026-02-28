@@ -148,7 +148,7 @@ class CategoryService {
       const qb = repo
         .createQueryBuilder("category")
         .leftJoinAndSelect("category.parent", "parent")
-        // .leftJoinAndSelect("category.children", "children");
+        .leftJoinAndSelect("category.children", "children");
 
       if (options.is_active !== undefined) {
         qb.andWhere("category.is_active = :isActive", {

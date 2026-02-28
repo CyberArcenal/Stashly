@@ -7,14 +7,14 @@ class LoyaltyTransactionService {
   constructor() {
     this.repository = null;
     this.customerRepository = null;
-    this.orderRepository = null;      // replaces saleRepository
+    this.orderRepository = null;      // replaces orderRepository
   }
 
   async initialize() {
     const { AppDataSource } = require("../main/db/datasource");
     const LoyaltyTransaction = require("../entities/LoyaltyTransaction");
     const Customer = require("../entities/Customer");
-    const Order = require("../entities/Order");   // use Order instead of Sale
+    const Order = require("../entities/Order");   // use Order instead of order
 
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
@@ -47,7 +47,7 @@ class LoyaltyTransactionService {
       if (!customer) throw new Error(`Customer with ID ${data.customerId} not found`);
 
       let order = null;
-      if (data.orderId) {   // was saleId
+      if (data.orderId) {   // was orderId
         order = await orderRepo.findOne({ where: { id: data.orderId } });
         if (!order) throw new Error(`Order with ID ${data.orderId} not found`);
       }
@@ -55,7 +55,7 @@ class LoyaltyTransactionService {
       const transactionData = {
         ...data,
         customer,
-        sale: order,        // entity relation is named "sale" but we assign Order
+        order: order,        // entity relation is named "order" but we assign Order
         timestamp: new Date(),
       };
       delete transactionData.customerId;
@@ -90,7 +90,7 @@ class LoyaltyTransactionService {
     const { saveDb, updateDb, removeDb } = require("../utils/dbUtils/dbActions");
     const { transaction: repo, customer: customerRepo, order: orderRepo } = await this.getRepositories();
     try {
-      const existing = await repo.findOne({ where: { id }, relations: ["customer", "sale"] });
+      const existing = await repo.findOne({ where: { id }, relations: ["customer", "order"] });
       if (!existing) throw new Error(`LoyaltyTransaction with ID ${id} not found`);
       const oldData = { ...existing };
 
@@ -108,13 +108,13 @@ class LoyaltyTransactionService {
         existing.customer = customer;
         delete data.customerId;
       }
-      if (data.orderId !== undefined) {   // was saleId
+      if (data.orderId !== undefined) {   // was orderId
         if (data.orderId === null) {
-          existing.sale = null;
+          existing.order = null;
         } else {
           const order = await orderRepo.findOne({ where: { id: data.orderId } });
           if (!order) throw new Error(`Order with ID ${data.orderId} not found`);
-          existing.sale = order;
+          existing.order = order;
         }
         delete data.orderId;
       }
@@ -151,7 +151,7 @@ class LoyaltyTransactionService {
     try {
       const transaction = await repo.findOne({
         where: { id },
-        relations: ["customer", "sale"], // sale is actually Order
+        relations: ["customer", "order"], // order is actually Order
       });
       if (!transaction) throw new Error(`LoyaltyTransaction with ID ${id} not found`);
       await auditLogger.logView("LoyaltyTransaction", id, "system");
@@ -167,7 +167,7 @@ class LoyaltyTransactionService {
     try {
       const qb = repo.createQueryBuilder("lt")
         .leftJoinAndSelect("lt.customer", "customer")
-        .leftJoinAndSelect("lt.sale", "sale"); // sale is Order
+        .leftJoinAndSelect("lt.order", "order");
 
       if (options.customerId) {
         qb.andWhere("customer.id = :customerId", { customerId: options.customerId });

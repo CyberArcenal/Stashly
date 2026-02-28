@@ -35,6 +35,10 @@ import {
   MedalIcon,
   Medal,
   Award,
+  Bell,
+  TruckElectricIcon,
+  BellElectric,
+  BellElectricIcon,
 } from "lucide-react";
 import { version } from "../../../../package.json";
 
@@ -58,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 
   const menuItems = [
     // Core Sections
-    { path: "/", name: "Dashboard", icon: LayoutDashboard, category: "core" },
+    { path: "/dashboard", name: "Dashboard", icon: LayoutDashboard, category: "core" },
     {
       path: "",
       name: "Products",
@@ -130,12 +134,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     // Customers (new nav)
     {
       path: "",
-      name: "Customers",
+      name: "Clients",
       icon: Users,
       category: "customers",
       children: [
-        { path: "/customers", name: "All Customers", icon: Users },
-        { path: "/customers/loyalty", name: "Customers Loyalty", icon: Award },
+        {path: "/suppliers", name: "Suppliers", icon: TruckElectricIcon},
+        { path: "/customers", name: "Customers", icon: Users },
+        { path: "/customers/loyalty", name: "Loyalty's", icon: Award },
       ],
     },
 
@@ -147,6 +152,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       category: "system",
       children: [
         { path: "/audit", name: "Audit Trail", icon: Lock },
+        { path: "/notification-log", name: "Notify Log's", icon: BellElectricIcon},
         { path: "/settings", name: "Settings", icon: Settings },
         { name: "Activation", icon: Key, path: "/activation" },
       ],

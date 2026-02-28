@@ -34,6 +34,7 @@ export interface ProductImage {
 // Para sa pag-create ng product image
 export interface ProductImageCreateData {
   productId: number;
+  file?: File | null;
   image_url?: string | null;
   image_path?: string | null;
   alt_text?: string | null;

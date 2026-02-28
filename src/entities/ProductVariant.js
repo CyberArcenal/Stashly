@@ -10,8 +10,16 @@ const ProductVariant = new EntitySchema({
     net_price: { type: Number, nullable: true },
     cost_per_item: { type: Number, nullable: true },
     barcode: { type: String, nullable: true, unique: true },
-    created_at: { type: Date, default: () => "CURRENT_TIMESTAMP", nullable: false },
-    updated_at: { type: Date, default: () => "CURRENT_TIMESTAMP", nullable: false },
+    created_at: {
+      type: Date,
+      default: () => "CURRENT_TIMESTAMP",
+      nullable: false,
+    },
+    updated_at: {
+      type: Date,
+      default: () => "CURRENT_TIMESTAMP",
+      nullable: false,
+    },
     is_deleted: { type: Boolean, default: false, nullable: false },
     is_active: { type: Boolean, default: true, nullable: false },
   },
@@ -19,23 +27,24 @@ const ProductVariant = new EntitySchema({
     product: {
       target: "Product",
       type: "many-to-one",
+      joinColumn: { name: "productId" }, // 👈 add this
       onDelete: "CASCADE",
       inverseSide: "variants",
     },
     stockItems: {
       target: "StockItem",
       type: "one-to-many",
-      mappedBy: "variant",
+      inverseSide: "variant", // 👈 replace mappedBy
     },
     orderItems: {
       target: "OrderItem",
       type: "one-to-many",
-      mappedBy: "variant",
+      inverseSide: "variant",
     },
     purchaseItems: {
       target: "PurchaseItem",
       type: "one-to-many",
-      mappedBy: "variant",
+      inverseSide: "variant",
     },
   },
 });

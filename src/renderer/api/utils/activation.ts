@@ -132,6 +132,8 @@ class ActivationAPI {
         params: {},
       });
 
+      console.log(response)
+
       if (response.status) {
         return response;
       }
@@ -151,6 +153,8 @@ class ActivationAPI {
         method: "getDeviceInfo",
         params: {},
       });
+
+      console.log(response)
 
       if (response.status) {
         return response;

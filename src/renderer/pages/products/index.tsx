@@ -7,7 +7,7 @@ import Pagination from "../../components/Shared/Pagination1";
 import { dialogs } from "../../utils/dialogs";
 import { showSuccess, showError, showInfo } from "../../utils/notification";
 
-import useProducts from "./hooks/useProducts";
+import useProducts, { type ProductWithDetails } from "./hooks/useProducts";
 import useProductForm from "./hooks/useProductForm";
 import useProductView from "./hooks/useProductView";
 
@@ -21,6 +21,10 @@ import {
   type ProductExportParams,
 } from "../../api/exports/product"; // from second product.ts
 import productAPI from "../../api/core/product";
+import ProductImageFormDialog from "../productImage/components/ProductImageFormDialog";
+import useVariantForm from "../productVariant/hooks/useVariantForm";
+import VariantFormDialog from "../productVariant/components/VariantFormDialog";
+import { useProductImageForm } from "../productImage/hooks/useProductImageForm";
 
 const ProductsPage: React.FC = () => {
   const {
@@ -47,6 +51,8 @@ const ProductsPage: React.FC = () => {
   } = useProducts();
 
   const formDialog = useProductForm();
+  const imageForm = useProductImageForm(); // new hook
+  const variantForm = useVariantForm(); // assuming existing
   const viewDialog = useProductView();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -174,6 +180,78 @@ const ProductsPage: React.FC = () => {
     return { start, end };
   };
   const { start, end } = getDisplayRange();
+
+  const handlePublish = async (product: ProductWithDetails) => {
+    if (
+      !(await dialogs.confirm({
+        title: "Publish Product",
+        message: "Are you sure do you want to publish this product.",
+        icon: "warning"
+      }))
+    )
+      return;
+    try {
+      await productAPI.update(product.id, { is_published: true });
+      showSuccess("Product published");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleUnpublish = async (product: ProductWithDetails) => {
+      if (
+      !(await dialogs.confirm({
+        title: "Unpublish Product",
+        message: "Are you sure do you want to Unpublished this product.",
+        icon: "warning"
+      }))
+    )
+      return;
+    try {
+      await productAPI.update(product.id, { is_published: false });
+      showSuccess("Product unpublished");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleActivate = async (product: ProductWithDetails) => {
+      if (
+      !(await dialogs.confirm({
+        title: "Activate Product",
+        message: "Are you sure do you want to activate this product.",
+        icon: "info"
+      }))
+    )
+      return;
+    try {
+      await productAPI.update(product.id, { is_active: true });
+      showSuccess("Product activated");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleDeactivate = async (product: ProductWithDetails) => {
+      if (
+      !(await dialogs.confirm({
+        title: "Deactivate",
+        message: "Are you sure do you want to deactivate this product.",
+        icon: "warning"
+      }))
+    )
+      return;
+    try {
+      await productAPI.update(product.id, { is_active: false });
+      showSuccess("Product deactivated");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
 
   return (
     <div
@@ -435,6 +513,17 @@ const ProductsPage: React.FC = () => {
             }}
             onEdit={formDialog.openEdit}
             onDelete={handleDelete}
+            reload={reload}
+            onManageImages={(product) => {
+              imageForm.open(product.id);
+            }}
+            onAddVariant={(product) => {
+              variantForm.openAdd(product.id);
+            }}
+            onPublish={handlePublish}
+            onUnpublish={handleUnpublish}
+            onActivate={handleActivate}
+            onDeactivate={handleDeactivate}
           />
 
           {/* Empty State */}
@@ -519,6 +608,26 @@ const ProductsPage: React.FC = () => {
         loading={viewDialog.loading}
         isOpen={viewDialog.isOpen}
         onClose={viewDialog.close}
+      />
+
+      {/* Image Form Dialog */}
+      {imageForm.productId && (
+        <ProductImageFormDialog
+          isOpen={imageForm.isOpen}
+          productId={imageForm.productId}
+          onClose={imageForm.close}
+          onSuccess={reload}
+        />
+      )}
+
+      <VariantFormDialog
+        isOpen={variantForm.isOpen}
+        mode={variantForm.mode}
+        variantId={variantForm.variantId}
+        productId={variantForm.productId} // we need to add this to variantForm state
+        initialData={variantForm.initialData}
+        onClose={variantForm.close}
+        onSuccess={reload}
       />
     </div>
   );

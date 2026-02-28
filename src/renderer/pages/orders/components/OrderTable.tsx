@@ -1,9 +1,9 @@
 // src/renderer/pages/sales/components/SalesTable.tsx
 import React from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import type { OrderWithDetails } from "../hooks/useSales";
+import type { OrderWithDetails } from "../hooks/useOrder";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
-import SalesActionsDropdown from "./SalesActionsDropdown";
+import SalesActionsDropdown from "./OrderActionsDropdown";
 
 interface SalesTableProps {
   orders: OrderWithDetails[];
@@ -40,17 +40,30 @@ const SalesTable: React.FC<SalesTableProps> = ({
   };
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; color: string }> = {
+    const statusMap: Record<
+      string,
+      { bg: string; text: string; color: string }
+    > = {
       initiated: { bg: "bg-gray-100", text: "text-gray-600", color: "gray" },
-      pending: { bg: "bg-yellow-100", text: "text-yellow-700", color: "yellow" },
+      pending: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-700",
+        color: "yellow",
+      },
       confirmed: { bg: "bg-blue-100", text: "text-blue-700", color: "blue" },
       completed: { bg: "bg-green-100", text: "text-green-700", color: "green" },
       cancelled: { bg: "bg-red-100", text: "text-red-700", color: "red" },
-      refunded: { bg: "bg-purple-100", text: "text-purple-700", color: "purple" },
+      refunded: {
+        bg: "bg-purple-100",
+        text: "text-purple-700",
+        color: "purple",
+      },
     };
     const config = statusMap[status] || statusMap.pending;
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -61,7 +74,10 @@ const SalesTable: React.FC<SalesTableProps> = ({
       className="overflow-x-auto rounded-md border compact-table"
       style={{ borderColor: "var(--border-color)" }}
     >
-      <table className="min-w-full" style={{ borderColor: "var(--border-color)" }}>
+      <table
+        className="min-w-full"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <thead style={{ backgroundColor: "var(--card-secondary-bg)" }}>
           <tr>
             <th
@@ -71,7 +87,9 @@ const SalesTable: React.FC<SalesTableProps> = ({
             >
               <input
                 type="checkbox"
-                checked={orders.length > 0 && selectedOrders.length === orders.length}
+                checked={
+                  orders.length > 0 && selectedOrders.length === orders.length
+                }
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
                 style={{ color: "var(--accent-blue)" }}
@@ -140,8 +158,14 @@ const SalesTable: React.FC<SalesTableProps> = ({
           {orders.map((order) => (
             <tr
               key={order.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(order);
+              }}
               className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
-                selectedOrders.includes(order.id) ? "bg-[var(--accent-blue-dark)]" : ""
+                selectedOrders.includes(order.id)
+                  ? "bg-[var(--accent-blue-dark)]"
+                  : ""
               }`}
               style={{ borderBottom: "1px solid var(--border-color)" }}
             >

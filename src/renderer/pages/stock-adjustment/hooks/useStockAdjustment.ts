@@ -143,9 +143,9 @@ const useStockAdjustment = (): UseStockAdjustmentReturn => {
           let product_sku = "";
           let warehouse_name = "Unknown";
           let user_name = "System";
-          let metadataObj = {};
+          let metadataObj = null;
           try {
-            metadataObj = JSON.parse(movement.metadata);
+            metadataObj = JSON.parse(movement.metadata as string);
           } catch (e) {
             console.error("Invalid metadata JSON", e);
           }
@@ -154,26 +154,14 @@ const useStockAdjustment = (): UseStockAdjustmentReturn => {
             product_name =
               (movement.stockItem.product as any).name || "Unknown";
             product_sku = (movement.stockItem.product as any).sku || "";
-          } else if (movement.stockItem?.productId) {
-            const prod = products.find(
-              (p) => p.id === movement.stockItem?.productId,
-            );
-            if (prod) {
-              product_name = prod.name;
-              product_sku = prod.sku || "";
-            }
           }
 
           if (movement.warehouse) {
             warehouse_name = (movement.warehouse as any).name || "Unknown";
-          } else if (movement.warehouseId) {
-            const wh = warehouses.find((w) => w.id === movement.warehouseId);
-            if (wh) warehouse_name = wh.name;
           }
 
           if (metadataObj?.user) user_name = metadataObj?.user;
-          else if (movement.created_by)
-            user_name = `User ${movement.created_by}`;
+
 
           return {
             ...movement,

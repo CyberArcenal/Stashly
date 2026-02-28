@@ -39,7 +39,7 @@ const Purchase = new EntitySchema({
     items: {
       target: "PurchaseItem",
       type: "one-to-many",
-      mappedBy: "purchase",
+      inverseSide: "purchase",
     },
   },
 });

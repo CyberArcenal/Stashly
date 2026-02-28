@@ -9,8 +9,11 @@ import useStockMovements from "./hooks/useStockMovements";
 
 import FilterBar from "./components/FilterBar";
 
-import { stockMovementExportAPI, type StockMovementExportParams } from "../../api/exports/movement";
-import useMovementView from "./hooks/useMovementView";
+import {
+  stockMovementExportAPI,
+  type StockMovementExportParams,
+} from "../../api/exports/movement";
+import { useMovementView } from "./hooks/useMovementView";
 import MovementsTable from "./components/MovementsTable";
 import MovementViewDialog from "./components/MovementViewDialog";
 
@@ -37,7 +40,9 @@ const StockMovementsPage: React.FC = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("csv");
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
+    "csv",
+  );
 
   const handleExport = async () => {
     if (movements.length === 0) return;
@@ -56,7 +61,8 @@ const StockMovementsPage: React.FC = () => {
         date_from: filters.date_from || undefined,
         date_to: filters.date_to || undefined,
         search: filters.search || undefined,
-        change_direction: filters.change_direction as "in" | "out" | "all" || undefined,
+        change_direction:
+          (filters.change_direction as "in" | "out" | "all") || undefined,
       };
       await stockMovementExportAPI.exportMovements(exportParams);
       showSuccess("Export started.");
@@ -85,10 +91,16 @@ const StockMovementsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Stock Movements
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Track all inventory changes across warehouses
           </p>
         </div>
@@ -109,7 +121,9 @@ const StockMovementsPage: React.FC = () => {
             disabled={loading}
             className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
           >
-            <RefreshCw className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
             {loading ? "Refreshing..." : "Refresh"}
           </button>
 
@@ -122,7 +136,10 @@ const StockMovementsPage: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-1">
-              <label className="text-xs" style={{ color: "var(--sidebar-text)" }}>
+              <label
+                className="text-xs"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 Export:
               </label>
               <select
@@ -205,7 +222,9 @@ const StockMovementsPage: React.FC = () => {
       )}
 
       {/* Error */}
-      {error && <div className="text-center py-4 text-red-500">Error: {error}</div>}
+      {error && (
+        <div className="text-center py-4 text-red-500">Error: {error}</div>
+      )}
 
       {/* Table */}
       {!loading && !error && (
@@ -214,7 +233,12 @@ const StockMovementsPage: React.FC = () => {
             movements={paginatedMovements}
             onSort={handleSort}
             sortConfig={sortConfig}
-            onView={viewDialog.open}
+            onView={(movementWithDetails) => {
+              const movement = movements.find(
+                (m) => m.id === movementWithDetails.id,
+              );
+              viewDialog.open(movementWithDetails.id);
+            }}
           />
 
           {/* Empty State */}
@@ -223,11 +247,17 @@ const StockMovementsPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Package className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Package
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No stock movements found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {Object.values(filters).some((v) => v)
                   ? "Try adjusting your search or filters"
                   : "Movements will appear when stock changes occur."}
@@ -236,7 +266,10 @@ const StockMovementsPage: React.FC = () => {
                 {Object.values(filters).some((v) => v) && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters

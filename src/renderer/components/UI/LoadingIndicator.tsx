@@ -15,7 +15,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
 }) => {
   const sizeClasses = {
     sm: "h-4 w-4 border-2",
-    md: "h-8 w-8 border-3",
+    md: "h-8 w-8 border-[3px]", // 👈 arbitrary value
     lg: "h-12 w-12 border-4",
     xl: "h-16 w-16 border-4",
   };
@@ -35,7 +35,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
         className={clsx(
           "animate-spin rounded-full",
           sizeClasses[size],
-          colorClasses[color]
+          colorClasses[color],
         )}
       />
     </div>
@@ -62,7 +62,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           <div
             className={clsx(
               "rounded-lg bg-gray-200 dark:bg-[#2d485c] animate-pulse",
-              className || "h-40 w-full"
+              className || "h-40 w-full",
             )}
           />
         );
@@ -74,7 +74,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
                 key={item}
                 className={clsx(
                   "h-4 bg-gray-200 dark:bg-[#2d485c] rounded animate-pulse",
-                  className
+                  className,
                 )}
               />
             ))}
@@ -85,7 +85,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           <div
             className={clsx(
               "rounded-full bg-gray-200 dark:bg-[#2d485c] animate-pulse",
-              className || "h-10 w-10"
+              className || "h-10 w-10",
             )}
           />
         );
@@ -99,7 +99,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
                   className={clsx(
                     "h-4 bg-gray-200 dark:bg-[#2d485c] rounded animate-pulse flex-1",
                     item % 2 === 0 ? "w-full" : "w-5/6",
-                    className
+                    className,
                   )}
                 />
               </div>
@@ -123,7 +123,7 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
   rows = 5,
   columns = 5,
   withHeader = true,
-  className = 'h-8 w-64',
+  className = "h-8 w-64",
 }) => {
   return (
     <div className="w-full overflow-hidden">
@@ -147,7 +147,7 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
                   <div
                     className={clsx(
                       "h-4 bg-gray-200 dark:bg-[#2d485c] rounded animate-pulse",
-                      colIndex % 2 === 0 ? "w-full" : "w-2/3"
+                      colIndex % 2 === 0 ? "w-full" : "w-2/3",
                     )}
                   />
                 </td>

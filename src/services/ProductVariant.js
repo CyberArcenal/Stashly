@@ -146,6 +146,8 @@ class ProductVariantService {
     try {
       const qb = repo.createQueryBuilder("variant")
         .leftJoinAndSelect("variant.product", "product")
+        .leftJoinAndSelect("product.category", "category")
+        .leftJoinAndSelect("variant.stockItems", "stockItems")
         .where("variant.is_deleted = :isDeleted", { isDeleted: false });
 
       if (options.productId) {

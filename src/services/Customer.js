@@ -103,7 +103,7 @@ class CustomerService {
     try {
       const customer = await repo.findOne({
         where: { id },
-        relations: ["sales", "loyaltyTransactions"], // sales = orders
+        relations: ["order", "loyaltyTransactions"], // sales = orders
       });
       if (!customer) throw new Error(`Customer with ID ${id} not found`);
       await auditLogger.logView("Customer", id, "system");

@@ -8,6 +8,7 @@ export interface backendAPI {
   logo: (payload: any) => Promise<any>;
   loyalty: (payload: any) => Promise<any>;
   customer: (payload: any) => Promise<any>;
+  loyaltyTransaction: (payload: any) => Promise<any>;
   runMigrations: () => Promise<any>;
   getAppVersion: () => Promise<any>;
   category: (payload: any) => Promise<any>;
@@ -27,6 +28,7 @@ export interface backendAPI {
   orderItems: (payload: any) => Promise<any>;
   order: (payload: any) => Promise<any>;
   notification: (payload: any) => Promise<any>;
+  notificationLog: (payload: any) => Promise<any>;
   lowStock: (payload: any) => Promise<any>;
   inventorySettings: (payload: any) => Promise<any>;
   inventoryReport: (payload: any) => Promise<any>;

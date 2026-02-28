@@ -10,14 +10,23 @@ const ProductImage = new EntitySchema({
     alt_text: { type: String, nullable: true },
     is_primary: { type: Boolean, default: false, nullable: false },
     sort_order: { type: Number, default: 0, nullable: false },
-    created_at: { type: Date, default: () => "CURRENT_TIMESTAMP", nullable: false },
-    updated_at: { type: Date, default: () => "CURRENT_TIMESTAMP", nullable: false },
+    created_at: {
+      type: Date,
+      default: () => "CURRENT_TIMESTAMP",
+      nullable: false,
+    },
+    updated_at: {
+      type: Date,
+      default: () => "CURRENT_TIMESTAMP",
+      nullable: false,
+    },
     is_deleted: { type: Boolean, default: false, nullable: false },
   },
   relations: {
     product: {
       target: "Product",
       type: "many-to-one",
+      joinColumn: { name: "productId" }, // 👈 add this
       onDelete: "CASCADE",
       inverseSide: "images",
     },

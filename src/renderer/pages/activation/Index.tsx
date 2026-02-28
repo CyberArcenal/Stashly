@@ -1,7 +1,7 @@
 // src/modules/activation/pages/Index.tsx
-import ActivationDialog from "@/renderer/components/activations/ActivationDialog";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import ActivationDialog from "../../components/activations/ActivationDialog";
 
 const ActivationPage: React.FC = () => {
   const [showDialog, setShowDialog] = useState(true);

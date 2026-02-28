@@ -781,6 +781,7 @@ function registerIpcHandlers() {
   // Import modular IPC handlers (inventory-specific)
   try {
     const ipcModules = [
+      "./ipc/core/auditLog/index.ipc.js",
       "./ipc/core/barcode/index.ipc.js",
       "./ipc/core/category/index.ipc.js",
       "./ipc/core/customer/index.ipc.js",

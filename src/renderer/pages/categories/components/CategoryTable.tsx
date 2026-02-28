@@ -1,7 +1,8 @@
 // src/renderer/pages/categories/components/CategoryTable.tsx
 import React from "react";
-import { Edit, Eye, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import type { CategoryWithDetails } from "../hooks/useCategories";
+import CategoryActionsDropdown from "./CategoryActionsDropdown";
 
 interface CategoryTableProps {
   categories: CategoryWithDetails[];
@@ -13,6 +14,8 @@ interface CategoryTableProps {
   onView: (category: CategoryWithDetails) => void;
   onEdit: (category: CategoryWithDetails) => void;
   onDelete: (category: CategoryWithDetails) => void;
+  onActivate?: (category: CategoryWithDetails) => void;
+  onDeactivate?: (category: CategoryWithDetails) => void;
 }
 
 const CategoryTable: React.FC<CategoryTableProps> = ({
@@ -25,6 +28,8 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
   onView,
   onEdit,
   onDelete,
+  onActivate,
+  onDeactivate,
 }) => {
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return null;
@@ -65,7 +70,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("name")}
+              onClick={(e) =>{e.stopPropagation(); onSort("name")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Name</span>
@@ -75,7 +80,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("slug")}
+              onClick={(e) =>{e.stopPropagation(); onSort("slug")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Slug</span>
@@ -85,7 +90,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("description")}
+              onClick={(e) =>{e.stopPropagation(); onSort("description")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Description</span>
@@ -95,7 +100,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("is_active")}
+              onClick={(e) =>{e.stopPropagation(); onSort("is_active")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Status</span>
@@ -115,6 +120,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
           {categories.map((category) => (
             <tr
               key={category.id}
+              onClick={(e) =>{e.stopPropagation(); onView(category)}}
               className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
                 selectedCategories.includes(category.id) ? "bg-[var(--accent-blue-dark)]" : ""
               }`}
@@ -157,32 +163,14 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                 </span>
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                <div className="flex justify-end gap-xs">
-                  <button
-                    onClick={() => onView(category)}
-                    className="transition-colors p-1 rounded"
-                    style={{ color: "var(--accent-blue)" }}
-                    title="View"
-                  >
-                    <Eye className="icon-sm" />
-                  </button>
-                  <button
-                    onClick={() => onEdit(category)}
-                    className="transition-colors p-1 rounded"
-                    style={{ color: "var(--accent-blue)" }}
-                    title="Edit"
-                  >
-                    <Edit className="icon-sm" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(category)}
-                    className="transition-colors p-1 rounded"
-                    style={{ color: "var(--accent-red)" }}
-                    title="Delete"
-                  >
-                    <Trash2 className="icon-sm" />
-                  </button>
-                </div>
+                <CategoryActionsDropdown
+                  category={category}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onActivate={onActivate}
+                  onDeactivate={onDeactivate}
+                />
               </td>
             </tr>
           ))}

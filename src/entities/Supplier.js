@@ -27,7 +27,7 @@ const Supplier = new EntitySchema({
     purchases: {
       target: "Purchase",
       type: "one-to-many",
-      mappedBy: "supplier",
+      inverseSide: "supplier",
     },
   },
 });

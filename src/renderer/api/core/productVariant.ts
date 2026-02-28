@@ -39,6 +39,9 @@ export interface ProductVariant {
   updated_at: string;        // ISO date string
   is_deleted: boolean;
   is_active: boolean;
+
+  productId?: number;
+  stockId?: number;
   // Optional relations
   product?: Product;
   stockItems?: StockItem[];

@@ -28,6 +28,7 @@ export interface Category {
   // Optional relational fields (maaaring hindi laging kasama)
   parent?: Category | null;
   children?: Category[];
+  parentId?: number;
 }
 
 // Para sa create/update, gumagamit tayo ng partial data

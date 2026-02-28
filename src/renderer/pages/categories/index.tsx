@@ -6,13 +6,13 @@ import Pagination from "../../components/Shared/Pagination1";
 import { dialogs } from "../../utils/dialogs";
 import { showSuccess, showError } from "../../utils/notification";
 
-import useCategories from "./hooks/useCategories";
+import useCategories, { type CategoryWithDetails } from "./hooks/useCategories";
 
 import FilterBar from "./components/FilterBar";
 
 import categoryAPI from "../../api/core/category";
 import useCategoryForm from "./hooks/useCategoryForm";
-import useCategoryView from "./hooks/useCategoryView";
+import { useCategoryView } from "./hooks/useCategoryView";
 import CategoryTable from "./components/CategoryTable";
 import CategoryViewDialog from "./components/CategoryViewDialog";
 import CategoryFormDialog from "./components/CategoryFormDialog";
@@ -44,6 +44,26 @@ const CategoriesPage: React.FC = () => {
   const viewDialog = useCategoryView();
 
   const [showFilters, setShowFilters] = useState(false);
+
+  const handleActivate = async (category: CategoryWithDetails) => {
+    try {
+      await categoryAPI.update(category.id, { is_active: true });
+      showSuccess("Category activated");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleDeactivate = async (category: CategoryWithDetails) => {
+    try {
+      await categoryAPI.update(category.id, { is_active: false });
+      showSuccess("Category deactivated");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
 
   const handleDelete = async (category: any) => {
     const confirmed = await dialogs.confirm({
@@ -95,10 +115,16 @@ const CategoriesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Categories
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Organize your products with categories
           </p>
         </div>
@@ -119,7 +145,9 @@ const CategoriesPage: React.FC = () => {
             disabled={loading}
             className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
           >
-            <RefreshCw className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
             {loading ? "Refreshing..." : "Refresh"}
           </button>
           <Button
@@ -177,7 +205,10 @@ const CategoriesPage: React.FC = () => {
             borderColor: "var(--accent-blue)",
           }}
         >
-          <span className="font-medium text-sm" style={{ color: "var(--accent-green)" }}>
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--accent-green)" }}
+          >
             {selectedCategories.length} category(s) selected
           </span>
           <div className="flex gap-xs">
@@ -240,7 +271,9 @@ const CategoriesPage: React.FC = () => {
       )}
 
       {/* Error */}
-      {error && <div className="text-center py-4 text-red-500">Error: {error}</div>}
+      {error && (
+        <div className="text-center py-4 text-red-500">Error: {error}</div>
+      )}
 
       {/* Table */}
       {!loading && !error && (
@@ -255,6 +288,8 @@ const CategoriesPage: React.FC = () => {
             onView={(cat) => viewDialog.open(cat.id)}
             onEdit={formDialog.openEdit}
             onDelete={handleDelete}
+            onActivate={handleActivate}
+            onDeactivate={handleDeactivate}
           />
 
           {/* Empty State */}
@@ -263,11 +298,17 @@ const CategoriesPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Package className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Package
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No categories found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {Object.values(filters).some((v) => v)
                   ? "Try adjusting your search or filters"
                   : "Start by creating your first category"}
@@ -276,7 +317,10 @@ const CategoriesPage: React.FC = () => {
                 {Object.values(filters).some((v) => v) && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters
@@ -285,7 +329,10 @@ const CategoriesPage: React.FC = () => {
                 <Link
                   to="/categories/form"
                   className="compact-button rounded-md inline-block"
-                  style={{ backgroundColor: "var(--accent-green)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--accent-green)",
+                    color: "white",
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     formDialog.openAdd();
@@ -329,6 +376,7 @@ const CategoriesPage: React.FC = () => {
         loading={viewDialog.loading}
         isOpen={viewDialog.isOpen}
         onClose={viewDialog.close}
+        products={viewDialog.products}
       />
     </div>
   );

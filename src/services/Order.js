@@ -337,7 +337,7 @@ class OrderService {
       // @ts-ignore
       const order = await repo.findOne({
         where: { id, is_deleted: false },
-        relations: ["customer", "items"],
+        relations: ["customer", "items", "items.product", "items.warehouse", "items.variant"],
       });
       if (!order) throw new Error(`Order with ID ${id} not found`);
       await auditLogger.logView("Order", id, "system");

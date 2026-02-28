@@ -27,10 +27,8 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
-import notificationAPI, {
-  NotificationData,
-  NotificationStats,
-} from "@/renderer/api/notifications";
+import type { NotificationStats } from "../../../../api/core/notificationLog";
+
 
 // Icon mapping based on notification type key
 const NOTIFICATION_ICONS: Record<string, React.ComponentType<any>> = {
@@ -139,7 +137,7 @@ const NOTIFICATION_COLORS: Record<string, { text: string; bg: string }> = {
 };
 
 const NotificationsPage: React.FC = () => {
-  const [notifications, setNotifications] = useState<NotificationData[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);

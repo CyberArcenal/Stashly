@@ -6,16 +6,18 @@ import Pagination from "../../components/Shared/Pagination1";
 import { dialogs } from "../../utils/dialogs";
 import { showSuccess, showError, showInfo } from "../../utils/notification";
 
-import { salesExportAPI, type SalesExportParams } from "../../api/exports/sales";
 import orderAPI from "../../api/core/order";
-import useSalesForm from "./hooks/useSalesForm";
-import useSalesView from "./hooks/useSalesView";
-import SalesTable from "./components/SalesTable";
-import SalesFormDialog from "./components/SalesFormDialog";
-import SalesViewDialog from "./components/SalesViewDialog";
-import useSales from "./hooks/useSales";
+import useSalesForm from "./hooks/useOrderForm";
+import { useOrderView } from "./hooks/useOrderView";
+import SalesTable from "./components/OrderTable";
+import SalesFormDialog from "./components/OrderFormDialog";
+import useSales from "./hooks/useOrder";
 import FilterBar from "./components/FilterBar";
-import { orderExportAPI, type OrderExportParams } from "../../api/exports/order";
+import {
+  orderExportAPI,
+  type OrderExportParams,
+} from "../../api/exports/order";
+import OrderViewDialog from "./components/OrderViewDialog";
 const SalesPage: React.FC = () => {
   const {
     paginatedOrders,
@@ -40,11 +42,13 @@ const SalesPage: React.FC = () => {
   } = useSales();
 
   const formDialog = useSalesForm();
-  const viewDialog = useSalesView();
+  const viewDialog = useOrderView();
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("csv");
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
+    "csv",
+  );
 
   const handleDelete = async (order: any) => {
     const confirmed = await dialogs.confirm({
@@ -131,10 +135,16 @@ const SalesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Sales Orders
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Manage and track all sales transactions
           </p>
         </div>
@@ -155,7 +165,9 @@ const SalesPage: React.FC = () => {
             disabled={loading}
             className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
           >
-            <RefreshCw className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
             {loading ? "Refreshing..." : "Refresh"}
           </button>
 
@@ -168,7 +180,10 @@ const SalesPage: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-1">
-              <label className="text-xs" style={{ color: "var(--sidebar-text)" }}>
+              <label
+                className="text-xs"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 Export:
               </label>
               <select
@@ -232,7 +247,8 @@ const SalesPage: React.FC = () => {
             </span>
           </div>
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            Total Revenue: ₱{orders.reduce((sum, o) => sum + o.total, 0).toFixed(2)}
+            Total Revenue: ₱
+            {orders.reduce((sum, o) => sum + o.total, 0).toFixed(2)}
           </div>
         </div>
       )}
@@ -255,7 +271,10 @@ const SalesPage: React.FC = () => {
             borderColor: "var(--accent-blue)",
           }}
         >
-          <span className="font-medium text-sm" style={{ color: "var(--accent-green)" }}>
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--accent-green)" }}
+          >
             {selectedOrders.length} order(s) selected
           </span>
           <div className="flex gap-xs">
@@ -318,7 +337,9 @@ const SalesPage: React.FC = () => {
       )}
 
       {/* Error */}
-      {error && <div className="text-center py-4 text-red-500">Error: {error}</div>}
+      {error && (
+        <div className="text-center py-4 text-red-500">Error: {error}</div>
+      )}
 
       {/* Table */}
       {!loading && !error && (
@@ -342,11 +363,17 @@ const SalesPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Package className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Package
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No sales orders found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {Object.values(filters).some((v) => v)
                   ? "Try adjusting your search or filters"
                   : "Start by creating your first order"}
@@ -355,7 +382,10 @@ const SalesPage: React.FC = () => {
                 {Object.values(filters).some((v) => v) && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters
@@ -364,7 +394,10 @@ const SalesPage: React.FC = () => {
                 <Link
                   to="/sales/form"
                   className="compact-button rounded-md inline-block"
-                  style={{ backgroundColor: "var(--accent-green)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--accent-green)",
+                    color: "white",
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     formDialog.openAdd();
@@ -403,11 +436,15 @@ const SalesPage: React.FC = () => {
         onSuccess={reload}
       />
 
-      <SalesViewDialog
+      <OrderViewDialog
+        isOpen={viewDialog.isOpen}
         order={viewDialog.order}
         loading={viewDialog.loading}
-        isOpen={viewDialog.isOpen}
         onClose={viewDialog.close}
+        onEdit={(id) => {
+          const order = orders.find((o) => o.id === id);
+          viewDialog.open(id);
+        }}
       />
     </div>
   );

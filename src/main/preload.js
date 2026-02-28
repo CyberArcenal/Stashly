@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld("backendAPI", {
   productImage: (payload) => ipcRenderer.invoke("productImage", payload),
   productBulk: (payload) => ipcRenderer.invoke("productBulk", payload),
 
+  customer: (payload) => ipcRenderer.invoke("customer", payload),
+  loyaltyTransaction: (payload) => ipcRenderer.invoke("loyaltyTransaction", payload),
+
   // Orders
   orderLog: (payload) => ipcRenderer.invoke("orderLog", payload),
   orderItem: (payload) => ipcRenderer.invoke("orderItem", payload),
@@ -43,6 +46,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
 
   // Notifications
   notification: (payload) => ipcRenderer.invoke("notification", payload),
+  notificationLog:(payload) => ipcRenderer.invoke("notificationLog", payload),
 
   // Supplier & warehouse
   supplier: (payload) => ipcRenderer.invoke("supplier", payload),

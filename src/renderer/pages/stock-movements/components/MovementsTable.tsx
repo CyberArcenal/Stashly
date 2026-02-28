@@ -55,7 +55,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("created_at")}
+              onClick={(e) => {e.stopPropagation(); onSort("created_at")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Date/Time</span>
@@ -65,7 +65,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("product_name")}
+              onClick={(e) => {e.stopPropagation(); onSort("product_name")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Product</span>
@@ -75,7 +75,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("movement_type")}
+              onClick={(e) => {e.stopPropagation(); onSort("movement_type")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Type</span>
@@ -85,7 +85,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("change")}
+              onClick={(e) => {e.stopPropagation(); onSort("change")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Change</span>
@@ -95,7 +95,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("warehouse_name")}
+              onClick={(e) => {e.stopPropagation(); onSort("warehouse_name")}}
             >
               <div className="flex items-center gap-xs">
                 <span>Warehouse</span>
@@ -105,7 +105,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={() => onSort("user_name")}
+              onClick={(e) => {e.stopPropagation(); onSort("user_name")}}
             >
               <div className="flex items-center gap-xs">
                 <span>User</span>
@@ -130,6 +130,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
           {movements.map((movement) => (
             <tr
               key={movement.id}
+              onClick={(e) =>{e.stopPropagation(); onView(movement)}}
               className="hover:bg-[var(--card-secondary-bg)] transition-colors"
               style={{ borderBottom: "1px solid var(--border-color)" }}
             >
@@ -175,7 +176,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                 <button
-                  onClick={() => onView(movement)}
+                  onClick={(e) => {e.stopPropagation(); onView(movement)}}
                   className="p-1.5 rounded hover:bg-gray-100 transition-colors"
                   title="View Details"
                 >

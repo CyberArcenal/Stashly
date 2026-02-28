@@ -31,7 +31,7 @@ const Order = new EntitySchema({
     items: {
       target: "OrderItem",
       type: "one-to-many",
-      mappedBy: "order",
+      inverseSide: "order",
     },
   },
 });

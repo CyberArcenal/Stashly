@@ -155,6 +155,7 @@ const StockTable: React.FC<StockTableProps> = ({
             return (
               <tr
                 key={item.id}
+                onClick={(e) =>{e.stopPropagation(); onView(item)}}
                 className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
                   selectedItems.includes(item.id) ? "bg-[var(--accent-blue-dark)]" : ""
                 }`}

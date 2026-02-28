@@ -149,6 +149,7 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
           {purchases.map((purchase) => (
             <tr
               key={purchase.id}
+              onClick={(e) =>{e.stopPropagation(); onView(purchase)}}
               className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
                 selectedPurchases.includes(purchase.id) ? "bg-[var(--accent-blue-dark)]" : ""
               }`}

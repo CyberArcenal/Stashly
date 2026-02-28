@@ -138,6 +138,7 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({
           {warehouses.map((warehouse) => (
             <tr
               key={warehouse.id}
+              onClick={(e) =>{e.stopPropagation(); onView(warehouse)}}
               className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
                 selectedWarehouses.includes(warehouse.id) ? "bg-[var(--accent-blue-dark)]" : ""
               }`}

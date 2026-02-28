@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 import useVariants from "./hooks/useVariants";
 import useVariantForm from "./hooks/useVariantForm";
-import useVariantView from "./hooks/useVariantView";
+import { useVariantView } from "./hooks/useVariantView";
 
 import FilterBar from "./components/FilterBar";
 import VariantTable from "./components/VariantTable";
@@ -13,14 +13,17 @@ import VariantViewDialog from "./components/VariantViewDialog";
 import { dialogs } from "../../utils/dialogs";
 import productVariantAPI from "../../api/core/productVariant";
 import { showError, showInfo, showSuccess } from "../../utils/notification";
-import { variantExportAPI, type VariantExportParams } from "../../api/exports/variant";
+import {
+  variantExportAPI,
+  type VariantExportParams,
+} from "../../api/exports/variant";
 import Button from "../../components/UI/Button";
 import Pagination from "../../components/Shared/Pagination1";
 
 const VariantsPage: React.FC = () => {
   const {
     paginatedVariants,
-    allVariants,        // full list (all variants)
+    allVariants, // full list (all variants)
     filters,
     loading,
     error,
@@ -42,11 +45,13 @@ const VariantsPage: React.FC = () => {
   } = useVariants();
 
   const formDialog = useVariantForm();
-  const viewDialog = useVariantView();
+  const variantView = useVariantView();
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("csv");
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
+    "csv",
+  );
 
   const handleDelete = async (variant: any) => {
     const confirmed = await dialogs.confirm({
@@ -71,7 +76,9 @@ const VariantsPage: React.FC = () => {
     });
     if (!confirmed) return;
     try {
-      await Promise.all(selectedVariants.map((id) => productVariantAPI.delete(id)));
+      await Promise.all(
+        selectedVariants.map((id) => productVariantAPI.delete(id)),
+      );
       showSuccess(`${selectedVariants.length} variants deleted.`);
       setSelectedVariants([]);
       reload();
@@ -89,7 +96,9 @@ const VariantsPage: React.FC = () => {
     });
     if (!confirmed) return;
     try {
-      await Promise.all(selectedVariants.map((id) => productVariantAPI.delete(id)));
+      await Promise.all(
+        selectedVariants.map((id) => productVariantAPI.delete(id)),
+      );
       showSuccess(`${selectedVariants.length} variants archived.`);
       setSelectedVariants([]);
       reload();
@@ -111,7 +120,12 @@ const VariantsPage: React.FC = () => {
         format: exportFormat,
         product: filters.productId ? String(filters.productId) : undefined,
         category: filters.categoryId ? String(filters.categoryId) : undefined,
-        low_stock: filters.lowStock === "true" ? "true" : filters.lowStock === "false" ? "false" : undefined,
+        low_stock:
+          filters.lowStock === "true"
+            ? "true"
+            : filters.lowStock === "false"
+              ? "false"
+              : undefined,
         search: filters.search || undefined,
       };
       await variantExportAPI.exportVariants(exportParams);
@@ -130,6 +144,10 @@ const VariantsPage: React.FC = () => {
   };
   const { start, end } = getDisplayRange();
 
+  function onEdit(id: number) {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div
       className="compact-card rounded-md shadow-md border"
@@ -141,15 +159,21 @@ const VariantsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Product Variants
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Manage product variants, SKUs, and stock levels
           </p>
         </div>
         <div className="flex flex-wrap gap-xs w-full sm:w-auto">
-           <button
+          <button
             className="compact-button rounded-md flex items-center transition-colors ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
             style={{
               backgroundColor: "var(--card-secondary-bg)",
@@ -160,16 +184,16 @@ const VariantsPage: React.FC = () => {
             <Filter className="icon-sm mr-xs" />
             Filters {showFilters ? "↑" : "↓"}
           </button>
-           <button
-              onClick={reload}
-              disabled={loading}
-              className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
-              />
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
+          <button
+            onClick={reload}
+            disabled={loading}
+            className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
 
           {/* Export */}
           <div
@@ -180,7 +204,10 @@ const VariantsPage: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-1">
-              <label className="text-xs" style={{ color: "var(--sidebar-text)" }}>
+              <label
+                className="text-xs"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 Export:
               </label>
               <select
@@ -228,19 +255,38 @@ const VariantsPage: React.FC = () => {
           <div className="flex items-center gap-2 text-xs">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-green)]"></span>
-              {allVariants.filter((v: { is_active: any; }) => v.is_active).length} Active
+              {
+                allVariants.filter((v: { is_active: any }) => v.is_active)
+                  .length
+              }{" "}
+              Active
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-orange)]"></span>
-              {allVariants.filter((v: { is_active: any; }) => !v.is_active).length} Inactive
+              {
+                allVariants.filter((v: { is_active: any }) => !v.is_active)
+                  .length
+              }{" "}
+              Inactive
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-red)]"></span>
-              {allVariants.filter((v: { total_quantity: number; }) => v.total_quantity === 0).length} Out of Stock
+              {
+                allVariants.filter(
+                  (v: { total_quantity: number }) => v.total_quantity === 0,
+                ).length
+              }{" "}
+              Out of Stock
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-blue)]"></span>
-              {allVariants.filter((v: { total_quantity: number; }) => v.total_quantity > 0 && v.total_quantity <= 5).length} Low Stock
+              {
+                allVariants.filter(
+                  (v: { total_quantity: number }) =>
+                    v.total_quantity > 0 && v.total_quantity <= 5,
+                ).length
+              }{" "}
+              Low Stock
             </span>
           </div>
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
@@ -268,7 +314,10 @@ const VariantsPage: React.FC = () => {
             borderColor: "var(--accent-blue)",
           }}
         >
-          <span className="font-medium text-sm" style={{ color: "var(--accent-green)" }}>
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--accent-green)" }}
+          >
             {selectedVariants.length} variant(s) selected
           </span>
           <div className="flex gap-xs">
@@ -360,7 +409,7 @@ const VariantsPage: React.FC = () => {
             onToggleSelectAll={toggleSelectAll}
             onSort={handleSort}
             sortConfig={sortConfig}
-            onView={(variant) => viewDialog.open(variant.id)}
+            onView={(variant) => variantView.open(variant.id)}
             onEdit={formDialog.openEdit}
             onDelete={handleDelete}
           />
@@ -371,11 +420,17 @@ const VariantsPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Package className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Package
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No variants found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {Object.values(filters).some((v) => v)
                   ? "Try adjusting your search or filters"
                   : "Start by creating your first variant"}
@@ -384,7 +439,10 @@ const VariantsPage: React.FC = () => {
                 {Object.values(filters).some((v) => v) && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters
@@ -393,7 +451,10 @@ const VariantsPage: React.FC = () => {
                 <Link
                   to="/variants/form"
                   className="compact-button rounded-md inline-block"
-                  style={{ backgroundColor: "var(--accent-green)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--accent-green)",
+                    color: "white",
+                  }}
                 >
                   Add First Variant
                 </Link>
@@ -429,11 +490,20 @@ const VariantsPage: React.FC = () => {
       />
 
       <VariantViewDialog
-        variant={viewDialog.variant}
-        stockMovements={viewDialog.movements}
-        loading={viewDialog.loading}
-        isOpen={viewDialog.isOpen}
-        onClose={viewDialog.close}
+        isOpen={variantView.isOpen}
+        variant={variantView.variant}
+        stockItems={variantView.stockItems}
+        movements={variantView.movements}
+        loading={variantView.loading}
+        loadingMovements={variantView.loadingMovements}
+        onClose={variantView.close}
+        onEdit={(id) => {
+          const variant = allVariants.find((v) => v.id === id);
+          if (variant) {
+            formDialog.openEdit(variant);
+          }
+        }}
+        onFetchMovements={variantView.fetchMovements}
       />
     </div>
   );

@@ -11,13 +11,19 @@ import useWarehouses from "./hooks/useWarehouses";
 import FilterBar from "./components/FilterBar";
 
 import warehouseAPI from "../../api/core/warehouse";
-import { stockExportAPI, type StockExportParams } from "../../api/exports/stocks";
+import {
+  stockExportAPI,
+  type StockExportParams,
+} from "../../api/exports/stocks";
 import useWarehouseForm from "./hooks/useWarehouseForm";
-import useWarehouseView from "./hooks/useWarehouseView";
+import { useWarehouseView } from "./hooks/useWarehouseView";
 import WarehouseTable from "./components/WarehouseTable";
 import WarehouseFormDialog from "./components/WarehouseFormDialog";
 import WarehouseViewDialog from "./components/WarehouseViewDialog";
-import { warehouseExportAPI, type WarehouseExportParams } from "../../api/exports/warehouse";
+import {
+  warehouseExportAPI,
+  type WarehouseExportParams,
+} from "../../api/exports/warehouse";
 
 const WarehousesPage: React.FC = () => {
   const {
@@ -47,7 +53,9 @@ const WarehousesPage: React.FC = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("csv");
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
+    "csv",
+  );
 
   const handleDelete = async (warehouse: any) => {
     const confirmed = await dialogs.confirm({
@@ -72,7 +80,9 @@ const WarehousesPage: React.FC = () => {
     });
     if (!confirmed) return;
     try {
-      await Promise.all(selectedWarehouses.map((id) => warehouseAPI.delete(id)));
+      await Promise.all(
+        selectedWarehouses.map((id) => warehouseAPI.delete(id)),
+      );
       showSuccess(`${selectedWarehouses.length} warehouses deleted.`);
       setSelectedWarehouses([]);
       reload();
@@ -84,7 +94,9 @@ const WarehousesPage: React.FC = () => {
   const handleUpdateStatus = async (id: number, isActive: boolean) => {
     try {
       await warehouseAPI.update(id, { is_active: isActive });
-      showSuccess(`Warehouse ${isActive ? "activated" : "deactivated"} successfully.`);
+      showSuccess(
+        `Warehouse ${isActive ? "activated" : "deactivated"} successfully.`,
+      );
       reload();
     } catch (err: any) {
       showError(err.message);
@@ -130,10 +142,16 @@ const WarehousesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Warehouses
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Manage storage locations and inventory
           </p>
         </div>
@@ -154,7 +172,9 @@ const WarehousesPage: React.FC = () => {
             disabled={loading}
             className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
           >
-            <RefreshCw className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
             {loading ? "Refreshing..." : "Refresh"}
           </button>
 
@@ -167,7 +187,10 @@ const WarehousesPage: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-1">
-              <label className="text-xs" style={{ color: "var(--sidebar-text)" }}>
+              <label
+                className="text-xs"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 Export Warehouse:
               </label>
               <select
@@ -227,7 +250,11 @@ const WarehousesPage: React.FC = () => {
             </span>
           </div>
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            Total Capacity: {warehouses.reduce((sum, w) => sum + w.limit_capacity, 0).toLocaleString()} units
+            Total Capacity:{" "}
+            {warehouses
+              .reduce((sum, w) => sum + w.limit_capacity, 0)
+              .toLocaleString()}{" "}
+            units
           </div>
         </div>
       )}
@@ -250,7 +277,10 @@ const WarehousesPage: React.FC = () => {
             borderColor: "var(--accent-blue)",
           }}
         >
-          <span className="font-medium text-sm" style={{ color: "var(--accent-green)" }}>
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--accent-green)" }}
+          >
             {selectedWarehouses.length} warehouse(s) selected
           </span>
           <div className="flex gap-xs">
@@ -313,7 +343,9 @@ const WarehousesPage: React.FC = () => {
       )}
 
       {/* Error */}
-      {error && <div className="text-center py-4 text-red-500">Error: {error}</div>}
+      {error && (
+        <div className="text-center py-4 text-red-500">Error: {error}</div>
+      )}
 
       {/* Table */}
       {!loading && !error && (
@@ -337,11 +369,17 @@ const WarehousesPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Package className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Package
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No warehouses found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {Object.values(filters).some((v) => v)
                   ? "Try adjusting your search or filters"
                   : "Start by creating your first warehouse"}
@@ -350,7 +388,10 @@ const WarehousesPage: React.FC = () => {
                 {Object.values(filters).some((v) => v) && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters
@@ -359,7 +400,10 @@ const WarehousesPage: React.FC = () => {
                 <Link
                   to="/warehouses/form"
                   className="compact-button rounded-md inline-block"
-                  style={{ backgroundColor: "var(--accent-green)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--accent-green)",
+                    color: "white",
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     formDialog.openAdd();
@@ -403,6 +447,8 @@ const WarehousesPage: React.FC = () => {
         loading={viewDialog.loading}
         isOpen={viewDialog.isOpen}
         onClose={viewDialog.close}
+        stockItems={viewDialog.stockItems}
+        movements={viewDialog.movements}
       />
     </div>
   );

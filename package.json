@@ -70,6 +70,7 @@
     "reflect-metadata": "^0.2.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.0.2",
+    "swiper": "^12.1.2",
     "tailwind-merge": "^3.4.0",
     "twilio": "^5.12.2",
     "typeorm": "^0.3.28"

@@ -10,10 +10,13 @@ import usePurchases from "./hooks/usePurchases";
 
 import FilterBar from "./components/FilterBar";
 
-import { purchaseExportAPI, type PurchaseExportParams } from "../../api/exports/purchase";
+import {
+  purchaseExportAPI,
+  type PurchaseExportParams,
+} from "../../api/exports/purchase";
 import purchaseAPI from "../../api/core/purchase";
 import usePurchaseForm from "./hooks/usePurchaseForm";
-import usePurchaseView from "./hooks/usePurchaseView";
+import { usePurchaseView } from "./hooks/usePurchaseView";
 import PurchaseTable from "./components/PurchaseTable";
 import PurchaseFormDialog from "./components/PurchaseFormDialog";
 import PurchaseViewDialog from "./components/PurchaseViewDialog";
@@ -46,7 +49,9 @@ const PurchasesPage: React.FC = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">("csv");
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
+    "csv",
+  );
 
   const handleDelete = async (purchase: any) => {
     const confirmed = await dialogs.confirm({
@@ -135,10 +140,16 @@ const PurchasesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Purchase Orders
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Manage and track all purchase transactions
           </p>
         </div>
@@ -159,7 +170,9 @@ const PurchasesPage: React.FC = () => {
             disabled={loading}
             className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
           >
-            <RefreshCw className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
             {loading ? "Refreshing..." : "Refresh"}
           </button>
 
@@ -172,7 +185,10 @@ const PurchasesPage: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-1">
-              <label className="text-xs" style={{ color: "var(--sidebar-text)" }}>
+              <label
+                className="text-xs"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 Export:
               </label>
               <select
@@ -228,15 +244,29 @@ const PurchasesPage: React.FC = () => {
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-blue)]"></span>
-              {purchases.filter((p) => p.status === "ordered" as "initiated" | "pending" | "confirmed" | "received" | "cancelled").length} Ordered
+              {
+                purchases.filter(
+                  (p) =>
+                    p.status ===
+                    ("ordered" as
+                      | "initiated"
+                      | "pending"
+                      | "confirmed"
+                      | "received"
+                      | "cancelled"),
+                ).length
+              }{" "}
+              Ordered
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-red)]"></span>
-              {purchases.filter((p) => p.status === "cancelled").length} Cancelled
+              {purchases.filter((p) => p.status === "cancelled").length}{" "}
+              Cancelled
             </span>
           </div>
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            Total Spent: ₱{purchases.reduce((sum, p) => sum + p.total, 0).toFixed(2)}
+            Total Spent: ₱
+            {purchases.reduce((sum, p) => sum + p.total, 0).toFixed(2)}
           </div>
         </div>
       )}
@@ -259,7 +289,10 @@ const PurchasesPage: React.FC = () => {
             borderColor: "var(--accent-blue)",
           }}
         >
-          <span className="font-medium text-sm" style={{ color: "var(--accent-green)" }}>
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--accent-green)" }}
+          >
             {selectedPurchases.length} purchase(s) selected
           </span>
           <div className="flex gap-xs">
@@ -322,7 +355,9 @@ const PurchasesPage: React.FC = () => {
       )}
 
       {/* Error */}
-      {error && <div className="text-center py-4 text-red-500">Error: {error}</div>}
+      {error && (
+        <div className="text-center py-4 text-red-500">Error: {error}</div>
+      )}
 
       {/* Table */}
       {!loading && !error && (
@@ -346,11 +381,17 @@ const PurchasesPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Package className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Package
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No purchase orders found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {Object.values(filters).some((v) => v)
                   ? "Try adjusting your search or filters"
                   : "Start by creating your first purchase order"}
@@ -359,7 +400,10 @@ const PurchasesPage: React.FC = () => {
                 {Object.values(filters).some((v) => v) && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters
@@ -368,7 +412,10 @@ const PurchasesPage: React.FC = () => {
                 <Link
                   to="/purchases/form"
                   className="compact-button rounded-md inline-block"
-                  style={{ backgroundColor: "var(--accent-green)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--accent-green)",
+                    color: "white",
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     formDialog.openAdd();

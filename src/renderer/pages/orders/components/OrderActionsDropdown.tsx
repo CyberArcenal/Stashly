@@ -13,7 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { dialogs } from "../../../utils/dialogs";
-import type { OrderWithDetails } from "../hooks/useSales";
+import type { OrderWithDetails } from "../hooks/useOrder";
 
 interface SalesActionsDropdownProps {
   order: OrderWithDetails;
@@ -124,7 +124,8 @@ const SalesActionsDropdown: React.FC<SalesActionsDropdownProps> = ({
               }}
               className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100"
             >
-              <Edit className="w-4 h-4 text-yellow-500" /> <span>Edit Order</span>
+              <Edit className="w-4 h-4 text-yellow-500" />{" "}
+              <span>Edit Order</span>
             </button>
 
             {/* Status Update Actions */}
@@ -186,7 +187,8 @@ const SalesActionsDropdown: React.FC<SalesActionsDropdownProps> = ({
               }}
               className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100"
             >
-              <FileText className="w-4 h-4 text-blue-500" /> <span>Add Note</span>
+              <FileText className="w-4 h-4 text-blue-500" />{" "}
+              <span>Add Note</span>
             </button>
 
             {/* Send Invoice (placeholder) */}
@@ -198,7 +200,8 @@ const SalesActionsDropdown: React.FC<SalesActionsDropdownProps> = ({
               }}
               className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100"
             >
-              <Send className="w-4 h-4 text-indigo-500" /> <span>Send Invoice</span>
+              <Send className="w-4 h-4 text-indigo-500" />{" "}
+              <span>Send Invoice</span>
             </button>
 
             {/* Divider */}

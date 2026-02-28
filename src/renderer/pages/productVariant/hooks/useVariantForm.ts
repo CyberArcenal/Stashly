@@ -7,17 +7,21 @@ const useVariantForm = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<FormMode>("add");
   const [variantId, setVariantId] = useState<number | null>(null);
-  const [initialData, setInitialData] = useState<Partial<ProductVariant> | null>(null);
+  const [productId, setProductId] = useState<number | null>(null);
+  const [initialData, setInitialData] =
+    useState<Partial<ProductVariant> | null>(null);
 
-  const openAdd = () => {
+  const openAdd = (productId: number | null) => {
     setMode("add");
+    setProductId(productId);
     setVariantId(null);
     setInitialData(null);
     setIsOpen(true);
   };
 
-  const openEdit = (variant: ProductVariant) => {
+  const openEdit = (variant: ProductVariant, productId: number | null) => {
     setMode("edit");
+    setProductId(productId);
     setVariantId(variant.id);
     setInitialData(variant);
     setIsOpen(true);
@@ -33,6 +37,7 @@ const useVariantForm = () => {
     isOpen,
     mode,
     variantId,
+    productId,
     initialData,
     openAdd,
     openEdit,

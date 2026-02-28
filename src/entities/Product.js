@@ -29,32 +29,33 @@ const Product = new EntitySchema({
       target: "Category",
       type: "many-to-one",
       onDelete: "SET NULL",
+      joinColumn: { name: "categoryId" },
       inverseSide: "products",
     },
     variants: {
       target: "ProductVariant",
       type: "one-to-many",
-      mappedBy: "product",
+      inverseSide: "product",
     },
     images: {
       target: "ProductImage",
       type: "one-to-many",
-      mappedBy: "product",
+      inverseSide: "product",
     },
     stockItems: {
       target: "StockItem",
       type: "one-to-many",
-      mappedBy: "product",
+      inverseSide: "product",
     },
     orderItems: {
       target: "OrderItem",
       type: "one-to-many",
-      mappedBy: "product",
+      inverseSide: "product",
     },
     purchaseItems: {
       target: "PurchaseItem",
       type: "one-to-many",
-      mappedBy: "product",
+      inverseSide: "product",
     },
   },
 });

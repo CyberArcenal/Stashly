@@ -35,6 +35,10 @@ const TransfersTable: React.FC<TransfersTableProps> = ({
     return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700">Transfer Out</span>;
   };
 
+  function onView(transfer: TransferWithDetails) {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div
       className="overflow-x-auto rounded-md border"
@@ -116,6 +120,7 @@ const TransfersTable: React.FC<TransfersTableProps> = ({
           {transfers.map((transfer) => (
             <tr
               key={transfer.id}
+              onClick={(e) =>{e.stopPropagation(); onView(transfer)}}
               className="hover:bg-[var(--card-secondary-bg)] transition-colors"
               style={{ borderBottom: "1px solid var(--border-color)" }}
             >

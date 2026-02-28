@@ -11,7 +11,11 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { dialogs } from "../../utils/dialogs";
-import notificationAPI, { type Notification } from "../../api/core/notifications";
+import notificationAPI, {
+  type Notification,
+} from "../../api/core/notifications";
+import { useNotificationView } from "../../pages/notification/hooks/useNotificationView";
+import NotificationViewDialog from "../../pages/notification/components/NotificationViewDialog";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
@@ -32,6 +36,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const [hasMore, setHasMore] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const limit = 15;
+
+  const notificationView = useNotificationView();
 
   // Reset when drawer opens
   useEffect(() => {
@@ -89,7 +95,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       const response = await notificationAPI.markAsRead(id);
       if (response.status) {
         setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+          prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
         );
         const newUnreadCount = Math.max(0, unreadCount - 1);
         setUnreadCount(newUnreadCount);
@@ -127,7 +133,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     try {
       const response = await notificationAPI.delete(id);
       if (response.status) {
-        const wasUnread = notifications.find((n) => n.id === id)?.isRead === false;
+        const wasUnread =
+          notifications.find((n) => n.id === id)?.isRead === false;
         setNotifications((prev) => prev.filter((n) => n.id !== id));
         if (wasUnread) {
           const newUnreadCount = Math.max(0, unreadCount - 1);
@@ -165,19 +172,29 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const getTypeIcon = (type: Notification["type"]) => {
     switch (type) {
       case "success":
-        return <div className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />;
+        return (
+          <div className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />
+        );
       case "warning":
-        return <div className="w-2 h-2 rounded-full bg-[var(--accent-amber)]" />;
+        return (
+          <div className="w-2 h-2 rounded-full bg-[var(--accent-amber)]" />
+        );
       case "error":
         return <div className="w-2 h-2 rounded-full bg-[var(--accent-red)]" />;
       case "info":
         return <div className="w-2 h-2 rounded-full bg-[var(--accent-blue)]" />;
       case "purchase":
-        return <div className="w-2 h-2 rounded-full bg-[var(--accent-purple)]" />;
+        return (
+          <div className="w-2 h-2 rounded-full bg-[var(--accent-purple)]" />
+        );
       case "sale":
-        return <div className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />;
+        return (
+          <div className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />
+        );
       default:
-        return <div className="w-2 h-2 rounded-full bg-[var(--text-tertiary)]" />;
+        return (
+          <div className="w-2 h-2 rounded-full bg-[var(--text-tertiary)]" />
+        );
     }
   };
 
@@ -186,10 +203,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Drawer */}
       <div className="absolute right-0 top-0 h-full w-full max-w-md bg-[var(--card-bg)] border-l border-[var(--border-color)] shadow-xl transform transition-transform duration-300 ease-in-out windows-fade-in">
@@ -240,10 +254,13 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                 <AlertCircle className="w-10 h-10 mx-auto mb-2 text-[var(--accent-red)]" />
                 <p className="text-sm text-[var(--text-primary)]">{error}</p>
                 <button
-                  onClick={() => {
-                    setPage(1);
-                    setNotifications([]);
-                    fetchNotifications(true);
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    {
+                      setPage(1);
+                      setNotifications([]);
+                      fetchNotifications(true);
+                    }
                   }}
                   className="mt-3 px-4 py-2 bg-[var(--accent-blue)] text-white rounded text-sm"
                 >
@@ -269,6 +286,11 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                   return (
                     <div
                       key={notification.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(notification.id);
+                        notificationView.open(notification.id);
+                      }}
                       className={`group relative p-3 rounded-lg border ${
                         notification.isRead
                           ? "border-[var(--border-color)] bg-[var(--card-secondary-bg)]"
@@ -301,7 +323,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                             </p>
                             {longMessage && (
                               <button
-                                onClick={() => toggleExpanded(notification.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpanded(notification.id);
+                                }}
                                 className="mt-1 text-xs text-[var(--accent-blue)] hover:underline flex items-center gap-1"
                               >
                                 {expanded ? (
@@ -310,7 +335,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                                   </>
                                 ) : (
                                   <>
-                                    Read more <ChevronDown className="w-3 h-3" />
+                                    Read more{" "}
+                                    <ChevronDown className="w-3 h-3" />
                                   </>
                                 )}
                               </button>
@@ -320,7 +346,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                           <p className="text-xs text-[var(--text-tertiary)] mt-2">
                             {format(
                               new Date(notification.createdAt),
-                              "MMM dd, yyyy • hh:mm a"
+                              "MMM dd, yyyy • hh:mm a",
                             )}
                           </p>
 
@@ -338,7 +364,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {!notification.isRead && (
                             <button
-                              onClick={() => handleMarkAsRead(notification.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(notification.id);
+                              }}
                               className="p-1 hover:bg-[var(--card-hover-bg)] rounded"
                               title="Mark as read"
                             >
@@ -346,7 +375,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                             </button>
                           )}
                           <button
-                            onClick={() => handleDelete(notification.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(notification.id);
+                            }}
                             className="p-1 hover:bg-[var(--card-hover-bg)] rounded"
                             title="Delete"
                           >
@@ -377,6 +409,12 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
           </div>
         </div>
       </div>
+      <NotificationViewDialog
+        isOpen={notificationView.isOpen}
+        notification={notificationView.notification}
+        loading={notificationView.loading}
+        onClose={notificationView.close}
+      />
     </div>
   );
 };

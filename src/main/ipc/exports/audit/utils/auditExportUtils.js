@@ -13,7 +13,6 @@ const EXPORT_DIR = path.join(
   "audit_log_exports",
 );
 
-// Create export directory if it doesn't exist
 if (!fs.existsSync(EXPORT_DIR)) {
   fs.mkdirSync(EXPORT_DIR, { recursive: true });
 }
@@ -37,7 +36,7 @@ try {
 }
 
 // ----------------------------------------------------------------------
-// Helper: get action display name (tulad ng original)
+// Helper: get action display name
 // @ts-ignore
 function getActionDisplay(actionType) {
   const actionMap = {
@@ -85,39 +84,31 @@ function getMimeType(format) {
 }
 
 // ----------------------------------------------------------------------
-// Kunin ang audit logs base data (eksaktong replica ng _getBaseAuditLogsData)
+// Fetch audit logs – only fields that exist in the entity
 async function getBaseAuditLogsData(params = {}) {
+  // @ts-ignore
   // @ts-ignore
   const { date_from, date_to, user_id, action_type, model_name, suspicious } =
     params;
 
-  const queryBuilder = AppDataSource.createQueryBuilder(AuditLog, "a")
-    .leftJoinAndSelect("a.user", "u") // assuming relation "user" exists
-    .select([
-      "a.id",
-      "a.created_at",
-      "a.action",
-      "a.entity", // original uses action_type and model_name; we map accordingly
-      "a.entityId",
-      "a.description",
-      "a.ip_address",
-      "a.user_agent",
-      "a.is_suspicious",
-      "a.suspicious_reason",
-      "u.username",
-      "u.email",
-    ])
-    .where("a.is_deleted = 0");
+  const queryBuilder = AppDataSource.createQueryBuilder(AuditLog, "a").select([
+    "a.id",
+    "a.timestamp",
+    "a.action",
+    "a.entity",
+    "a.entityId",
+    "a.description",
+    // newData and previousData are available but not used in the current export
+  ]);
 
   if (date_from) {
-    queryBuilder.andWhere("DATE(a.created_at) >= :date_from", { date_from });
+    queryBuilder.andWhere("DATE(a.timestamp) >= :date_from", { date_from });
   }
   if (date_to) {
-    queryBuilder.andWhere("DATE(a.created_at) <= :date_to", { date_to });
+    queryBuilder.andWhere("DATE(a.timestamp) <= :date_to", { date_to });
   }
-  if (user_id && user_id !== "all") {
-    queryBuilder.andWhere("a.user_id = :user_id", { user_id });
-  }
+  // user_id filter – if you still have a user relation, adjust accordingly.
+  // For now, we ignore user_id because the entity has no user reference.
   if (action_type && action_type !== "all") {
     queryBuilder.andWhere("a.action = :action_type", { action_type });
   }
@@ -126,42 +117,33 @@ async function getBaseAuditLogsData(params = {}) {
       model_name: `%${model_name}%`,
     });
   }
-  if (suspicious === true) {
-    queryBuilder.andWhere("a.is_suspicious = 1");
-  } else if (suspicious === false) {
-    queryBuilder.andWhere("a.is_suspicious = 0");
-  }
+  // suspicious filter removed because the field doesn't exist
 
-  queryBuilder.orderBy("a.created_at", "DESC");
+  queryBuilder.orderBy("a.timestamp", "DESC");
 
   const logs = await queryBuilder.getMany();
 
-  // Process logs to match original format
+  // Map to the same structure expected by the rest of the code
   return logs.map((log) => ({
     // @ts-ignore
-    Date: new Date(log.created_at).toLocaleDateString(),
+    Date: new Date(log.timestamp).toLocaleDateString(),
     // @ts-ignore
-    Time: new Date(log.created_at).toLocaleTimeString(),
-    // @ts-ignore
-    User: log.user?.username || "System",
-    // @ts-ignore
-    "User Email": log.user?.email || "system@localhost",
+    Time: new Date(log.timestamp).toLocaleTimeString(),
+    User: "System", // no user info available
+    "User Email": "system@localhost",
     Action: getActionDisplay(log.action),
     Model: log.entity || "N/A",
     "Object ID": log.entityId?.toString() || "N/A",
-    // @ts-ignore
-    "IP Address": log.ip_address || "N/A",
-    // @ts-ignore
-    Suspicious: log.is_suspicious ? "Yes" : "No",
-    // @ts-ignore
-    "Suspicious Reason": log.suspicious_reason || "",
-    // @ts-ignore
-    "User Agent": log.user_agent || "",
+    "IP Address": "N/A",
+    Suspicious: "No", // always "No" because field is missing
+    "Suspicious Reason": "",
+    "User Agent": "",
   }));
 }
 
 // ----------------------------------------------------------------------
-// CSV export
+// CSV export (unchanged)
+// @ts-ignore
 // @ts-ignore
 async function exportCSV(logs, params) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -197,12 +179,11 @@ async function exportCSV(logs, params) {
 }
 
 // ----------------------------------------------------------------------
-// Excel export (gamit ang exceljs kung available)
+// Excel export (unchanged except removed suspicious highlighting)
 // @ts-ignore
 async function exportExcel(logs, params) {
   // @ts-ignore
   if (!excelJS) {
-    // fallback to CSV
     return await exportCSV(logs, params);
   }
 
@@ -216,7 +197,6 @@ async function exportExcel(logs, params) {
 
   const worksheet = workbook.addWorksheet("Audit Logs");
 
-  // Define columns
   const columns = [
     { header: "Date", key: "Date", width: 12 },
     { header: "Time", key: "Time", width: 10 },
@@ -231,7 +211,7 @@ async function exportExcel(logs, params) {
   ];
   worksheet.columns = columns;
 
-  // Title row
+  // Title
   const titleRow = worksheet.addRow(["Audit Log List"]);
   titleRow.font = { bold: true, size: 14 };
   worksheet.mergeCells(`A1:J1`);
@@ -243,10 +223,9 @@ async function exportExcel(logs, params) {
   worksheet.mergeCells(`A2:J2`);
   subtitleRow.font = { size: 9, italic: true };
 
-  // Empty row
   worksheet.addRow([]);
 
-  // Header row (row 4)
+  // Header
   const headerRow = worksheet.getRow(4);
   headerRow.values = columns.map((c) => c.header);
   headerRow.font = { bold: true, color: { argb: "FFFFFF" } };
@@ -283,21 +262,11 @@ async function exportExcel(logs, params) {
       };
     }
 
-    // Highlight suspicious rows
-    if (log["Suspicious"] === "Yes") {
-      const suspiciousCell = row.getCell(9);
-      suspiciousCell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFC7CE" },
-      };
-    }
+    // Suspicious highlighting removed because field is always "No"
   });
 
-  // Freeze header
   worksheet.views = [{ state: "frozen", ySplit: 4 }];
 
-  // Auto-filter
   if (logs.length > 0) {
     worksheet.autoFilter = {
       from: { row: 4, column: 1 },
@@ -312,6 +281,8 @@ async function exportExcel(logs, params) {
 }
 
 // ----------------------------------------------------------------------
+// PDF export (unchanged – suspicious highlighting removed)
+// ----------------------------------------------------------------------
 // PDF export (gamit ang pdfkit kung available)
 // @ts-ignore
 async function exportPDF(logs, params) {
@@ -324,7 +295,12 @@ async function exportPDF(logs, params) {
   const filename = `audit_log_list_${timestamp}.pdf`;
   const filepath = path.join(EXPORT_DIR, filename);
 
-  const doc = new PDFKit({ size: "A4", layout: "landscape", margin: 20 });
+  const doc = new PDFKit({
+    size: "A4",
+    layout: "landscape",
+    margin: 20,
+    bufferPages: true, // ✅ Required for page numbering
+  });
   const writeStream = fs.createWriteStream(filepath);
   doc.pipe(writeStream);
 
@@ -354,15 +330,15 @@ async function exportPDF(logs, params) {
     return { filename, fileSize: formatFileSize(stats.size) };
   }
 
-  // Table dimensions
   const pageWidth = 842;
   const leftMargin = 20;
   const rightMargin = 20;
   const availableWidth = pageWidth - leftMargin - rightMargin;
 
+  // ✅ Adjusted column widths: mas malaki ang Date at Time para hindi mag-wrap ang AM/PM
   const columnWidths = [
-    availableWidth * 0.08, // Date
-    availableWidth * 0.06, // Time
+    availableWidth * 0.1, // Date (dati 0.08)
+    availableWidth * 0.08, // Time (dati 0.06)
     availableWidth * 0.1, // User
     availableWidth * 0.13, // User Email
     availableWidth * 0.1, // Action
@@ -370,7 +346,7 @@ async function exportPDF(logs, params) {
     availableWidth * 0.08, // Object ID
     availableWidth * 0.1, // IP Address
     availableWidth * 0.08, // Suspicious
-    availableWidth * 0.17, // Suspicious Reason
+    availableWidth * 0.13, // Suspicious Reason (binawasan ng konti)
   ];
 
   const headers = [
@@ -388,7 +364,6 @@ async function exportPDF(logs, params) {
   const rowHeight = 15;
   let currentY = doc.y;
 
-  // Helper to draw table header
   // @ts-ignore
   const drawHeader = (y) => {
     doc
@@ -433,7 +408,7 @@ async function exportPDF(logs, params) {
         .fill();
     }
 
-    // Cell borders
+    // Borders
     doc.lineWidth(0.2);
     let x = leftMargin;
     for (let j = 0; j < columnWidths.length; j++) {
@@ -467,18 +442,20 @@ async function exportPDF(logs, params) {
     ];
     rowData.forEach((value, j) => {
       let cellValue = String(value);
-      if (j === 3 && cellValue.length > 20)
-        cellValue = cellValue.substring(0, 17) + "...";
-      if (j === 9 && cellValue.length > 25)
+      // Truncate long fields para hindi mag-overlap (pero hindi na kailangan masyado dahil may space na)
+      if (j === 3 && cellValue.length > 25)
         cellValue = cellValue.substring(0, 22) + "...";
-      if (j === 4 && cellValue.length > 12)
-        cellValue = cellValue.substring(0, 9) + "...";
+      if (j === 9 && cellValue.length > 30)
+        cellValue = cellValue.substring(0, 27) + "...";
+      if (j === 4 && cellValue.length > 15)
+        cellValue = cellValue.substring(0, 12) + "...";
       doc
         .fontSize(8)
         .font("Helvetica")
         .text(cellValue, x + 3, currentY + 4, {
           width: columnWidths[j] - 6,
           align: j === 8 ? "center" : "left",
+          lineBreak: false, // pigilan ang wrapping kung ayaw, pero sa bagong width ay hindi na dapat mag-wrap
         });
       x += columnWidths[j];
     });
@@ -487,19 +464,23 @@ async function exportPDF(logs, params) {
   }
 
   // Page numbers
-  const pageCount = doc.bufferedPageRange().count;
-  for (let i = 0; i < pageCount; i++) {
+  const range = doc.bufferedPageRange();
+  const start = range.start;
+  const count = range.count;
+
+  for (let i = start; i < start + count; i++) {
     doc.switchToPage(i);
     doc
       .fontSize(7)
       .fillColor("#666666")
-      .text(`Page ${i + 1} of ${pageCount}`, leftMargin, 595 - 15, {
+      .text(`Page ${i - start + 1} of ${count}`, leftMargin, 595 - 15, {
         align: "right",
         width: availableWidth,
       });
   }
 
   doc.end();
+
   await new Promise((resolve, reject) => {
     // @ts-ignore
     writeStream.on("finish", resolve);
@@ -564,7 +545,7 @@ async function getExportPreview(params) {
 }
 
 // ----------------------------------------------------------------------
-// Supported formats (tulad ng original)
+// Supported formats
 function getSupportedFormats() {
   return [
     {

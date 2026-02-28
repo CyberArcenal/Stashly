@@ -24,22 +24,22 @@ const Warehouse = new EntitySchema({
     stockItems: {
       target: "StockItem",
       type: "one-to-many",
-      mappedBy: "warehouse",
+      inverseSide: "warehouse",
     },
     stockMovements: {
       target: "StockMovement",
       type: "one-to-many",
-      mappedBy: "warehouse",
+      inverseSide: "warehouse",
     },
     purchases: {
       target: "Purchase",
       type: "one-to-many",
-      mappedBy: "warehouse",
+      inverseSide: "warehouse",
     },
     orderItems: {
       target: "OrderItem",
       type: "one-to-many",
-      mappedBy: "warehouse",
+      inverseSide: "warehouse",
     },
   },
 });

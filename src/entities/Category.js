@@ -26,14 +26,14 @@ const Category = new EntitySchema({
     parent: {
       target: "Category",
       type: "many-to-one",
+      joinColumn: { name: "parentId" }, // 👈 camelCase
       onDelete: "CASCADE",
-      joinColumn: { name: "parent_id" },
-      inverseSide: "children", // optional
+      inverseSide: "children",
     },
     children: {
       target: "Category",
       type: "one-to-many",
-      mappedBy: "parent",
+      inverseSide: "parent", // 👈 replace mappedBy
     },
   },
 });

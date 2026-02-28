@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import activationAPI from "../api/utils/activation";
 import ActivationDialog from "../components/activations/ActivationDialog";
+import { useGeneralSettings } from "../utils/configUtils/general";
+import { systemCache } from "../utils/cacheUtils";
 
 const ProtectedRoute: React.FC = () => {
   const [isActivationRequired, setIsActivationRequired] = useState(false);
@@ -26,6 +28,15 @@ const ProtectedRoute: React.FC = () => {
 
     checkActivation();
   }, []);
+
+  const { currency } = useGeneralSettings();
+
+  useEffect(() => {
+    // Update cache whenever currency changes
+    if (currency) {
+      systemCache.setCurrency(currency);
+    }
+  }, [currency]);
 
   if (loading) {
     return (

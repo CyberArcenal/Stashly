@@ -70,6 +70,9 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={purchases.length > 0 && selectedPurchases.length === purchases.length}
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
@@ -158,6 +161,9 @@ const PurchaseTable: React.FC<PurchaseTableProps> = ({
               <td className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   checked={selectedPurchases.includes(purchase.id)}
                   onChange={() => onToggleSelect(purchase.id)}
                   className="h-3 w-3 rounded border-gray-300"

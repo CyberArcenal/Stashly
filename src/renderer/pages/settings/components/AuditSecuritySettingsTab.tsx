@@ -47,7 +47,7 @@ const AuditSecuritySettingsTab: React.FC<AuditSecuritySettingsTabProps> = ({ set
               min="0"
             />
           </div>
-
+{/* 
           <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Log Events (comma separated)
@@ -59,7 +59,7 @@ const AuditSecuritySettingsTab: React.FC<AuditSecuritySettingsTabProps> = ({ set
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
               placeholder="CREATE, UPDATE, DELETE"
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="space-y-4">
@@ -73,7 +73,7 @@ const AuditSecuritySettingsTab: React.FC<AuditSecuritySettingsTabProps> = ({ set
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Audit Log</span>
           </label>
 
-          <label className="flex items-center">
+          {/* <label className="flex items-center">
             <input
               type="checkbox"
               checked={form?.force_https || false}
@@ -81,9 +81,9 @@ const AuditSecuritySettingsTab: React.FC<AuditSecuritySettingsTabProps> = ({ set
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Force HTTPS</span>
-          </label>
+          </label> */}
 
-          <label className="flex items-center">
+          {/* <label className="flex items-center">
             <input
               type="checkbox"
               checked={form?.session_encryption_enabled || false}
@@ -91,7 +91,7 @@ const AuditSecuritySettingsTab: React.FC<AuditSecuritySettingsTabProps> = ({ set
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Session Encryption</span>
-          </label>
+          </label> */}
 
           <label className="flex items-center">
             <input

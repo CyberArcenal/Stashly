@@ -166,21 +166,6 @@ const calculateGrowthRate = (current: number, previous: number): number => {
   if (previous === 0) return current > 0 ? 100 : 0;
   return ((current - previous) / previous) * 100;
 };
-
-const formatCurrency = (
-  value: number,
-  currency: string = CURRENCY_CONFIG.currency,
-): string => {
-  return new Intl.NumberFormat(CURRENCY_CONFIG.locale, {
-    style: "currency",
-    currency: currency,
-  }).format(value);
-};
-
-const formatPercentage = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
-
 const calculateProfitMargin = (revenue: number, cost: number): number => {
   if (revenue === 0) return 0;
   return ((revenue - cost) / revenue) * 100;
@@ -389,8 +374,6 @@ class SalesReportAPI {
 
   // Public utility methods
   calculateGrowthRate = calculateGrowthRate;
-  formatCurrency = formatCurrency;
-  formatPercentage = formatPercentage;
   calculateProfitMargin = calculateProfitMargin;
 
   // Analytics methods (delegated to service)
@@ -409,8 +392,6 @@ export {
   SalesReportError,
   SalesAnalyticsService,
   calculateGrowthRate,
-  formatCurrency,
-  formatPercentage,
   calculateProfitMargin,
 };
 

@@ -34,7 +34,7 @@ interface ButtonProps {
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
-  size = 'md',
+  size = 'sm',
   children,
   onClick,
   disabled = false,

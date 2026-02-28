@@ -7,7 +7,6 @@ import {
   Wallet,
   Bell,
   FileText,
-  Link,
   Shield,
 } from "lucide-react";
 
@@ -19,7 +18,6 @@ interface SettingsTabsProps {
     | "cashier"
     | "notifications"
     | "data_reports"
-    | "integrations"
     | "audit_security";
   onTabChange: (
     tab:
@@ -29,7 +27,6 @@ interface SettingsTabsProps {
       | "cashier"
       | "notifications"
       | "data_reports"
-      | "integrations"
       | "audit_security"
   ) => void;
 }
@@ -42,7 +39,6 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({ activeTab, onTabChange }) =
     { id: "cashier", label: "Cashier", icon: Wallet },
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "data_reports", label: "Data & Reports", icon: FileText },
-    { id: "integrations", label: "Integrations", icon: Link },
     { id: "audit_security", label: "Audit & Security", icon: Shield },
   ] as const;
 

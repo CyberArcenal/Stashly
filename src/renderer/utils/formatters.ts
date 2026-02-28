@@ -2,7 +2,6 @@
 
 import { systemCache } from "./cacheUtils";
 
-
 export type DateFormatOptions = string | Intl.DateTimeFormatOptions;
 
 /**
@@ -14,7 +13,7 @@ export type DateFormatOptions = string | Intl.DateTimeFormatOptions;
  */
 export function formatDate(
   dateInput: string | Date | null | undefined,
-  formatOrOptions: DateFormatOptions = "yyyy-MM-dd HH:mm"
+  formatOrOptions: DateFormatOptions = "yyyy-MM-dd HH:mm",
 ): string {
   if (!dateInput) return "";
   const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
@@ -57,7 +56,7 @@ function tokenFormat(d: Date, fmt: string): string {
 export function formatCurrency(
   amount: number | string | null | undefined,
   currency?: string,
-  locale: string = "en-PH"
+  locale: string = "en-PH",
 ): string {
   if (amount == null) {
     const defaultCurrency = currency || systemCache.getCurrency();
@@ -153,7 +152,7 @@ export function formatDateForAPI(date: Date | null | undefined): string {
  */
 export function formatDateTime(
   input: string | Date | null | undefined,
-  includeTime: boolean = true
+  includeTime: boolean = true,
 ): string {
   if (!input) return "N/A";
   const date = input instanceof Date ? input : new Date(input);
@@ -197,7 +196,7 @@ export interface RelativeTimeOptions {
  */
 export function formatRelativeTime(
   input: Date | string | null | undefined,
-  options: RelativeTimeOptions = {}
+  options: RelativeTimeOptions = {},
 ): string {
   if (!input) return "N/A";
   const date = input instanceof Date ? input : new Date(input);
@@ -280,3 +279,7 @@ export function getCurrentCurrencySymbol(): string {
   const currency = systemCache.getCurrency();
   return getCurrencySymbol(currency);
 }
+
+export const formatPercentage = (value: number) => {
+  return `${value >= 0 ? "+" : ""}${formatCurrency(value)}`;
+};

@@ -74,6 +74,9 @@ const StockTable: React.FC<StockTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={stockItems.length > 0 && selectedItems.length === stockItems.length}
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
@@ -164,6 +167,9 @@ const StockTable: React.FC<StockTableProps> = ({
                 <td className="px-2 py-2 whitespace-nowrap">
                   <input
                     type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                     checked={selectedItems.includes(item.id)}
                     onChange={() => onToggleSelect(item.id)}
                     className="h-3 w-3 rounded border-gray-300"

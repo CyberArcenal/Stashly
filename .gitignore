@@ -3,3 +3,5 @@ node_modules
 App.db-wal
 App.db-shm
 .env
+/dist
+/release

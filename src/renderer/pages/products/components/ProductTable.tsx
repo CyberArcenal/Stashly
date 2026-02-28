@@ -1,6 +1,13 @@
 // src/renderer/pages/inventory/components/ProductTable.tsx
 import React from "react";
-import { ChevronUp, ChevronDown, Globe, PinOff, Power, PowerOff } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  Globe,
+  PinOff,
+  Power,
+  PowerOff,
+} from "lucide-react";
 import type { ProductWithDetails } from "../hooks/useProducts";
 import { formatCurrency } from "../../../utils/formatters";
 import ProductActionsDropdown from "./ProductActionsDropdown";
@@ -240,11 +247,18 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 <input
                   type="checkbox"
                   checked={selectedProducts.includes(product.id)}
-                  onChange={() => onToggleSelect(product.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect(product.id);
+                  }}
                   className="h-3 w-3 rounded border-gray-300"
                   style={{ color: "var(--accent-blue)" }}
                 />
               </td>
+
               <td className="px-4 py-2 whitespace-nowrap">
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-8 w-8">
@@ -325,7 +339,9 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   ) : (
                     <>
                       <PinOff className="w-4 h-4 text-orange-500" />
-                      <span className="text-xs text-orange-600">Unpublished</span>
+                      <span className="text-xs text-orange-600">
+                        Unpublished
+                      </span>
                     </>
                   )}
                 </div>

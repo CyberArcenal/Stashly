@@ -1,5 +1,3 @@
-
-
 // ============================================================================
 // Pure utility functions for general settings
 // ============================================================================
@@ -63,11 +61,6 @@ export const useReceiptFooterMessage = (): string => {
   return getSetting<string>("general", "receipt_footer_message", "Thank you for your purchase!");
 };
 
-export const useAutoLogoutMinutes = (): number => {
-  const { getSetting } = useSettings();
-  return getSetting<number>("general", "auto_logout_minutes", 30);
-};
-
 // Full general settings object
 export const useGeneralSettings = (): Partial<GeneralSettings> => {
   const { getSetting } = useSettings();
@@ -79,6 +72,5 @@ export const useGeneralSettings = (): Partial<GeneralSettings> => {
     currency: getSetting<string>("general", "currency", "PHP"),
     language: getSetting<string>("general", "language", "en"),
     receipt_footer_message: getSetting<string>("general", "receipt_footer_message", "Thank you for your purchase!"),
-    auto_logout_minutes: getSetting<number>("general", "auto_logout_minutes", 30),
   };
 };

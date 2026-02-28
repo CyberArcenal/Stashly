@@ -1,5 +1,5 @@
 // src/renderer/pages/inventory/components/ProductFormDialog.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import Modal from '../../../components/UI/Modal';
 import Button from '../../../components/UI/Button';
@@ -7,6 +7,7 @@ import CategorySelect from '../../../components/Selects/Category';
 import { dialogs } from '../../../utils/dialogs';
 import type { Product, ProductCreateData, ProductUpdateData } from '../../../api/core/product';
 import productAPI from '../../../api/core/product';
+import { useSalesSettings, useTaxSettings } from '../../../utils/configUtils/sales';
 
 interface ProductFormDialogProps {
   isOpen: boolean;
@@ -65,6 +66,45 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   });
 
   const categoryId = watch('categoryId');
+  const netPrice = watch('net_price') || 0;
+  const cost = watch('cost_per_item') || 0;
+
+  // Load tax settings
+  const { vat_rate, prices_include_tax } = useTaxSettings();
+  const { tax_enabled } = useSalesSettings();
+
+  // Calculate final selling price
+  const finalPrice = useMemo(() => {
+    if (!tax_enabled) return netPrice;
+    if (prices_include_tax) {
+      // net_price already includes tax
+      return netPrice;
+    } else {
+      // add VAT to base price
+      return netPrice * (1 + vat_rate / 100);
+    }
+  }, [netPrice, tax_enabled, vat_rate, prices_include_tax]);
+
+  // Breakdown for price summary
+  const { netAmount, vatAmount } = useMemo(() => {
+    if (!tax_enabled) {
+      return { netAmount: netPrice, vatAmount: 0 };
+    }
+    if (prices_include_tax) {
+      // Extract VAT from gross price
+      const net = netPrice / (1 + vat_rate / 100);
+      const vat = netPrice - net;
+      return { netAmount: net, vatAmount: vat };
+    } else {
+      // Compute VAT on net price
+      const vat = netPrice * (vat_rate / 100);
+      return { netAmount: netPrice, vatAmount: vat };
+    }
+  }, [netPrice, tax_enabled, vat_rate, prices_include_tax]);
+
+  // Optional: margin calculation
+  const margin = finalPrice - cost;
+  const marginPercent = cost ? (margin / cost) * 100 : 0;
 
   useEffect(() => {
     if (initialData) {
@@ -89,12 +129,21 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Convert empty strings to null for optional fields
+      const apiData = {
+        ...data,
+        description: data.description?.trim() || null,
+        barcode: data.barcode?.trim() || null,
+        dimensions: data.dimensions?.trim() || null,
+        weight: data.weight || null,
+      };
+
       if (mode === 'add') {
-        await productAPI.create(data as ProductCreateData);
+        await productAPI.create(apiData as ProductCreateData);
         dialogs.success('Product created successfully');
       } else {
         if (!productId) throw new Error('Product ID missing');
-        await productAPI.update(productId, data as ProductUpdateData);
+        await productAPI.update(productId, apiData as ProductUpdateData);
         dialogs.success('Product updated successfully');
       }
       onSuccess();
@@ -105,11 +154,17 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen}   safetyClose={true} onClose={onClose} title={mode === 'add' ? 'Add New Product' : 'Edit Product'} size="lg">
+    <Modal 
+      isOpen={isOpen} 
+      safetyClose={true} 
+      onClose={onClose} 
+      title={mode === 'add' ? 'Add New Product' : 'Edit Product'} 
+      size="xl" // 👈 Ginawang wider (max-w-4xl)
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Product Name */}
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Product Name - full width sa wider modal */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-3">
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
               Product Name *
             </label>
@@ -158,10 +213,21 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             />
           </div>
 
-          {/* Net Price */}
+          {/* Category */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
+              Category
+            </label>
+            <CategorySelect
+              value={categoryId}
+              onChange={(id) => setValue('categoryId', id)}
+            />
+          </div>
+
+          {/* Price Section - 3 columns for better organization */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
-              Net Price
+              Net Price {prices_include_tax ? '(incl. VAT)' : '(excl. VAT)'}
             </label>
             <input
               type="number"
@@ -176,7 +242,6 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             />
           </div>
 
-          {/* Cost per Item */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
               Cost per Item
@@ -194,51 +259,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             />
           </div>
 
-          {/* Category */}
-          <div className="col-span-2">
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
-              Category
-            </label>
-            <CategorySelect
-              value={categoryId}
-              onChange={(id) => setValue('categoryId', id)}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="col-span-2">
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
-              Description
-            </label>
-            <textarea
-              {...register('description')}
-              rows={3}
-              className="compact-input w-full border rounded-md"
-              style={{
-                backgroundColor: 'var(--card-bg)',
-                borderColor: 'var(--border-color)',
-                color: 'var(--sidebar-text)',
-              }}
-            />
-          </div>
-
-          {/* Checkboxes */}
-          <div className="col-span-2 flex gap-4">
-            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--sidebar-text)' }}>
-              <input type="checkbox" {...register('track_quantity')} className="h-4 w-4" />
-              Track Quantity
-            </label>
-            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--sidebar-text)' }}>
-              <input type="checkbox" {...register('allow_backorder')} className="h-4 w-4" />
-              Allow Backorder
-            </label>
-            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--sidebar-text)' }}>
-              <input type="checkbox" {...register('is_published')} className="h-4 w-4" />
-              Published
-            </label>
-          </div>
-
-          {/* Weight and Dimensions */}
+          {/* Weight */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
               Weight
@@ -255,7 +276,9 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               }}
             />
           </div>
-          <div>
+
+          {/* Dimensions */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-1">
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
               Dimensions
             </label>
@@ -269,6 +292,117 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 color: 'var(--sidebar-text)',
               }}
             />
+          </div>
+
+          {/* Price Summary Card - wider layout */}
+          {(tax_enabled || netPrice > 0 || cost > 0) && (
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 mt-2 p-4 rounded-md border" 
+                 style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+              <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--sidebar-text)' }}>Price Summary</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Left Column - Tax Breakdown */}
+                <div className="space-y-1">
+                  <h5 className="text-xs font-medium text-gray-500 uppercase">Tax Information</h5>
+                  {tax_enabled ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--sidebar-text)' }}>Net (excl. VAT):</span>
+                        <span className="font-mono" style={{ color: 'var(--sidebar-text)' }}>₱{netAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--sidebar-text)' }}>VAT ({vat_rate}%):</span>
+                        <span className="font-mono" style={{ color: 'var(--sidebar-text)' }}>₱{vatAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-semibold pt-1 border-t border-dashed" 
+                           style={{ borderColor: 'var(--border-color)' }}>
+                        <span style={{ color: 'var(--sidebar-text)' }}>Final (incl. VAT):</span>
+                        <span className="font-mono" style={{ color: 'var(--accent-color)' }}>₱{finalPrice.toFixed(2)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-sm font-semibold">
+                      <span style={{ color: 'var(--sidebar-text)' }}>Selling Price:</span>
+                      <span className="font-mono" style={{ color: 'var(--accent-color)' }}>₱{finalPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Middle Column - Cost & Margin */}
+                <div className="space-y-1">
+                  <h5 className="text-xs font-medium text-gray-500 uppercase">Profit Analysis</h5>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: 'var(--sidebar-text)' }}>Cost per Item:</span>
+                    <span className="font-mono" style={{ color: 'var(--sidebar-text)' }}>₱{cost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: 'var(--sidebar-text)' }}>Margin:</span>
+                    <span className="font-mono" style={{ color: margin >= 0 ? '#10b981' : '#ef4444' }}>
+                      ₱{margin.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: 'var(--sidebar-text)' }}>Margin %:</span>
+                    <span className="font-mono" style={{ color: margin >= 0 ? '#10b981' : '#ef4444' }}>
+                      {marginPercent.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Column - Settings Summary */}
+                <div className="space-y-1">
+                  <h5 className="text-xs font-medium text-gray-500 uppercase">Current Settings</h5>
+                  <div className="text-xs text-gray-500">
+                    <p>• VAT Rate: {vat_rate}%</p>
+                    <p>• Tax: {tax_enabled ? 'Enabled' : 'Disabled'}</p>
+                    <p>• Prices: {prices_include_tax ? 'Include VAT' : 'Exclude VAT'}</p>
+                    {tax_enabled && prices_include_tax && (
+                      <p className="text-xs italic mt-2">
+                        ⓘ Input price should include VAT
+                      </p>
+                    )}
+                    {tax_enabled && !prices_include_tax && (
+                      <p className="text-xs italic mt-2">
+                        ⓘ Input price is net of VAT
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Description - full width */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-3">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--sidebar-text)' }}>
+              Description
+            </label>
+            <textarea
+              {...register('description')}
+              rows={3}
+              className="compact-input w-full border rounded-md"
+              style={{
+                backgroundColor: 'var(--card-bg)',
+                borderColor: 'var(--border-color)',
+                color: 'var(--sidebar-text)',
+              }}
+            />
+          </div>
+
+          {/* Checkboxes */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 flex gap-6">
+            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--sidebar-text)' }}>
+              <input type="checkbox" {...register('track_quantity')} className="h-4 w-4" />
+              Track Quantity
+            </label>
+            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--sidebar-text)' }}>
+              <input type="checkbox" {...register('allow_backorder')} className="h-4 w-4" />
+              Allow Backorder
+            </label>
+            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--sidebar-text)' }}>
+              <input type="checkbox" {...register('is_published')} className="h-4 w-4" />
+              Published
+            </label>
           </div>
         </div>
 

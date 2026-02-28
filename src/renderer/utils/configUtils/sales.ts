@@ -1,4 +1,3 @@
-
 import type { SalesSettings, TaxSettings } from "../../api/core/system_config";
 import { useSettings } from "../../contexts/SettingsContext";
 
@@ -79,19 +78,9 @@ export const isRefundable = (createdAt: string | Date, refundWindowDays: number)
 
 // ----- Sales settings -----
 
-export const useTaxRate = (): number => {
-  const { getSetting } = useSettings();
-  return getSetting<number>("sales", "tax_rate", 12);
-};
-
 export const useVatRate = (): number => {
   const { getSetting } = useSettings();
   return getSetting<number>("sales", "vat_rate", 0.12);
-};
-
-export const useTaxCalculation = (): "inclusive" | "exclusive" => {
-  const { getSetting } = useSettings();
-  return getSetting<"inclusive" | "exclusive">("sales", "tax_calculation", "inclusive");
 };
 
 export const useTaxEnabled = (): boolean => {
@@ -107,26 +96,6 @@ export const usePricesIncludeTax = (): boolean => {
 export const useRoundTaxAtSubtotal = (): boolean => {
   const { getSetting } = useSettings();
   return getSetting<boolean>("sales", "round_tax_at_subtotal", false);
-};
-
-export const useTaxFlatAmount = (): number => {
-  const { getSetting } = useSettings();
-  return getSetting<number>("sales", "tax_flat_amount", 0);
-};
-
-export const useImportDutyRate = (): number => {
-  const { getSetting } = useSettings();
-  return getSetting<number>("sales", "import_duty_rate", 0);
-};
-
-export const useExciseTaxRate = (): number => {
-  const { getSetting } = useSettings();
-  return getSetting<number>("sales", "excise_tax_rate", 0);
-};
-
-export const useDigitalServicesTaxRate = (): number => {
-  const { getSetting } = useSettings();
-  return getSetting<number>("sales", "digital_services_tax_rate", 0);
 };
 
 export const useDiscountEnabled = (): boolean => {
@@ -159,32 +128,20 @@ export const useLoyaltyPointsRate = (): number => {
   return getSetting<number>("sales", "loyalty_points_rate", 0);
 };
 
-export const useLoyaltyPointsEarnOnConfirm = (): boolean => {
-  const { getSetting } = useSettings();
-  return getSetting<boolean>("sales", "loyalty_points_earn_on_confirm", false);
-};
-
 // ----- Complete sales settings object -----
 export const useSalesSettings = (): Partial<SalesSettings> => {
   const { getSetting } = useSettings();
   return {
-    tax_rate: getSetting<number>("sales", "tax_rate", 12),
     vat_rate: getSetting<number>("sales", "vat_rate", 0.12),
-    tax_calculation: getSetting<"inclusive" | "exclusive">("sales", "tax_calculation", "inclusive"),
     tax_enabled: getSetting<boolean>("sales", "tax_enabled", true),
     prices_include_tax: getSetting<boolean>("sales", "prices_include_tax", true),
     round_tax_at_subtotal: getSetting<boolean>("sales", "round_tax_at_subtotal", false),
-    tax_flat_amount: getSetting<number>("sales", "tax_flat_amount", 0),
-    import_duty_rate: getSetting<number>("sales", "import_duty_rate", 0),
-    excise_tax_rate: getSetting<number>("sales", "excise_tax_rate", 0),
-    digital_services_tax_rate: getSetting<number>("sales", "digital_services_tax_rate", 0),
     discount_enabled: getSetting<boolean>("sales", "discount_enabled", true),
     max_discount_percent: getSetting<number>("sales", "max_discount_percent", 100),
     allow_refunds: getSetting<boolean>("sales", "allow_refunds", true),
     refund_window_days: getSetting<number>("sales", "refund_window_days", 7),
     loyalty_points_enabled: getSetting<boolean>("sales", "loyalty_points_enabled", false),
     loyalty_points_rate: getSetting<number>("sales", "loyalty_points_rate", 0),
-    loyalty_points_earn_on_confirm: getSetting<boolean>("sales", "loyalty_points_earn_on_confirm", false),
   };
 };
 

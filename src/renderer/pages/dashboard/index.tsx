@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import type { DashboardData } from "../../api/analytics/dashboard";
 import dashboardAPI from "../../api/analytics/dashboard";
+import { formatCurrency, formatPercentage } from "../../utils/formatters";
 
 const DashboardPage: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
@@ -76,21 +77,6 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
-
-  // Format currency for Philippine Peso
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-PH", {
-      style: "currency",
-      currency: "PHP",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Format percentage
-  const formatPercentage = (value: number) => {
-    return `${value >= 0 ? "+" : ""}${formatCurrency(value)}`;
-  };
 
   // Quick actions for the dashboard
   const quickActions = [

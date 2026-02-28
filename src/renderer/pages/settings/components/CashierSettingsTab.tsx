@@ -11,7 +11,10 @@ interface CashierSettingsTabProps {
   onSave: (data: Partial<CashierSettings>) => Promise<void>;
 }
 
-const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSave }) => {
+const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({
+  settings,
+  onSave,
+}) => {
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +33,10 @@ const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSav
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--border-color)] p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--border-color)] p-6"
+    >
       <h2 className="text-lg font-semibold text-[var(--sidebar-text)] mb-6 flex items-center">
         <Wallet className="w-5 h-5 mr-2" />
         Cashier Settings
@@ -57,10 +63,16 @@ const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSav
             </label>
             <select
               value={form?.receipt_printer_type || "thermal"}
-              onChange={(e) => handleChange("receipt_printer_type", e.target.value)}
+              onChange={(e) =>
+                handleChange("receipt_printer_type", e.target.value)
+              }
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
             >
-              {PRINTER_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+              {PRINTER_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -70,11 +82,17 @@ const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSav
             </label>
             <select
               value={form?.cash_drawer_connection || ""}
-              onChange={(e) => handleChange("cash_drawer_connection", e.target.value)}
+              onChange={(e) =>
+                handleChange("cash_drawer_connection", e.target.value)
+              }
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
             >
               <option value="">None</option>
-              {CONNECTION_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+              {CONNECTION_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -85,7 +103,9 @@ const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSav
             <input
               type="text"
               value={form?.cash_drawer_device_path || ""}
-              onChange={(e) => handleChange("cash_drawer_device_path", e.target.value)}
+              onChange={(e) =>
+                handleChange("cash_drawer_device_path", e.target.value)
+              }
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
               placeholder="/dev/ttyUSB0"
             />
@@ -97,32 +117,44 @@ const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSav
             <input
               type="checkbox"
               checked={form?.enable_cash_drawer || false}
-              onChange={(e) => handleChange("enable_cash_drawer", e.target.checked)}
+              onChange={(e) =>
+                handleChange("enable_cash_drawer", e.target.checked)
+              }
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
-            <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Cash Drawer</span>
+            <span className="ml-2 text-sm text-[var(--sidebar-text)]">
+              Enable Cash Drawer
+            </span>
           </label>
 
           <label className="flex items-center">
             <input
               type="checkbox"
               checked={form?.enable_receipt_printing || false}
-              onChange={(e) => handleChange("enable_receipt_printing", e.target.checked)}
+              onChange={(e) =>
+                handleChange("enable_receipt_printing", e.target.checked)
+              }
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
-            <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Receipt Printing</span>
+            <span className="ml-2 text-sm text-[var(--sidebar-text)]">
+              Enable Receipt Printing
+            </span>
           </label>
 
           <label className="flex items-center">
             <input
               type="checkbox"
               checked={form?.enable_barcode_scanning || false}
-              onChange={(e) => handleChange("enable_barcode_scanning", e.target.checked)}
+              onChange={(e) =>
+                handleChange("enable_barcode_scanning", e.target.checked)
+              }
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
-            <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Barcode Scanning</span>
+            <span className="ml-2 text-sm text-[var(--sidebar-text)]">
+              Enable Barcode Scanning
+            </span>
           </label>
-
+          {/* 
           <label className="flex items-center">
             <input
               type="checkbox"
@@ -131,17 +163,21 @@ const CashierSettingsTab: React.FC<CashierSettingsTabProps> = ({ settings, onSav
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Touchscreen Mode</span>
-          </label>
+          </label> */}
 
-          <label className="flex items-center">
+          {/* <label className="flex items-center">
             <input
               type="checkbox"
               checked={form?.quick_sale_enabled || false}
-              onChange={(e) => handleChange("quick_sale_enabled", e.target.checked)}
+              onChange={(e) =>
+                handleChange("quick_sale_enabled", e.target.checked)
+              }
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
-            <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Quick Sale</span>
-          </label>
+            <span className="ml-2 text-sm text-[var(--sidebar-text)]">
+              Enable Quick Sale
+            </span>
+          </label> */}
         </div>
       </div>
 

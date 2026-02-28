@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { FileText } from "lucide-react";
 import type { DataReportsSettings } from "../../../api/core/system_config";
 
-const EXPORT_FORMATS = ["CSV", "Excel", "PDF", "JSON"];
+const EXPORT_FORMATS = ["CSV", "Excel", "PDF"];
 const BACKUP_SCHEDULES = [
   { value: "0 2 * * *", label: "Daily at 2 AM" },
   { value: "0 2 * * 0", label: "Weekly on Sunday at 2 AM" },

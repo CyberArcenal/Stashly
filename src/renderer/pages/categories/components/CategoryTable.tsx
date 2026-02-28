@@ -51,7 +51,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
       className="overflow-x-auto rounded-md border compact-table"
       style={{ borderColor: "var(--border-color)" }}
     >
-      <table className="min-w-full" style={{ borderColor: "var(--border-color)" }}>
+      <table
+        className="min-w-full"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <thead style={{ backgroundColor: "var(--card-secondary-bg)" }}>
           <tr>
             <th
@@ -61,7 +64,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             >
               <input
                 type="checkbox"
-                checked={categories.length > 0 && selectedCategories.length === categories.length}
+                checked={
+                  categories.length > 0 &&
+                  selectedCategories.length === categories.length
+                }
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
                 style={{ color: "var(--accent-blue)" }}
@@ -70,7 +76,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) =>{e.stopPropagation(); onSort("name")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("name");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Name</span>
@@ -80,7 +89,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) =>{e.stopPropagation(); onSort("slug")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("slug");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Slug</span>
@@ -90,7 +102,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) =>{e.stopPropagation(); onSort("description")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("description");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Description</span>
@@ -100,7 +115,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) =>{e.stopPropagation(); onSort("is_active")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("is_active");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Status</span>
@@ -120,15 +138,23 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
           {categories.map((category) => (
             <tr
               key={category.id}
-              onClick={(e) =>{e.stopPropagation(); onView(category)}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(category);
+              }}
               className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
-                selectedCategories.includes(category.id) ? "bg-[var(--accent-blue-dark)]" : ""
+                selectedCategories.includes(category.id)
+                  ? "bg-[var(--accent-blue-dark)]"
+                  : ""
               }`}
               style={{ borderBottom: "1px solid var(--border-color)" }}
             >
               <td className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   checked={selectedCategories.includes(category.id)}
                   onChange={() => onToggleSelect(category.id)}
                   className="h-3 w-3 rounded border-gray-300"
@@ -156,7 +182,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
               <td className="px-4 py-2 whitespace-nowrap">
                 <span
                   className={`inline-flex items-center px-xs py-xs rounded-full text-xs font-medium ${getStatusBadge(
-                    category.is_active
+                    category.is_active,
                   )}`}
                 >
                   {category.is_active ? "Active" : "Inactive"}

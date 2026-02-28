@@ -66,6 +66,9 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={suppliers.length > 0 && selectedSuppliers.length === suppliers.length}
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
@@ -164,6 +167,9 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
               <td className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   checked={selectedSuppliers.includes(supplier.id)}
                   onChange={() => onToggleSelect(supplier.id)}
                   className="h-3 w-3 rounded border-gray-300"

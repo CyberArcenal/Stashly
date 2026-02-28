@@ -8,7 +8,6 @@ import systemConfigAPI, {
   type CashierSettings,
   type NotificationsSettings,
   type DataReportsSettings,
-  type IntegrationsSettings,
   type AuditSecuritySettings,
 } from "../../../api/core/system_config";
 import { dialogs } from "../../../utils/dialogs";
@@ -18,11 +17,10 @@ const DEFAULT_GENERAL: GeneralSettings = {
   company_name: "Inventory Management",
   store_location: "",
   default_timezone: "Asia/Manila",
-  timezone: "Asia/Manila",          // kept for compatibility
+  timezone: "Asia/Manila", // kept for compatibility
   currency: "USD",
   language: "en",
   receipt_footer_message: "Thank you for your purchase!",
-  auto_logout_minutes: 30,
 };
 
 const DEFAULT_INVENTORY: InventorySettings = {
@@ -51,17 +49,10 @@ const DEFAULT_SALES: SalesSettings = {
   refund_window_days: 7,
   loyalty_points_enabled: false,
   loyalty_points_rate: 1,
-  loyalty_points_earn_on_confirm: false,
   // Tax fields
-  tax_rate: 0,
   vat_rate: 0,
   supplier_tax_rate: 0,
-  tax_calculation: "inclusive",
   tax_enabled: true,
-  tax_flat_amount: 0,
-  import_duty_rate: 0,
-  excise_tax_rate: 0,
-  digital_services_tax_rate: 0,
   round_tax_at_subtotal: false,
   prices_include_tax: true,
 };
@@ -72,8 +63,6 @@ const DEFAULT_CASHIER: CashierSettings = {
   enable_receipt_printing: true,
   receipt_printer_type: "thermal",
   enable_barcode_scanning: true,
-  enable_touchscreen_mode: false,
-  quick_sale_enabled: false,
   cash_drawer_connection: "",
   cash_drawer_device_path: "",
 };
@@ -140,23 +129,9 @@ const DEFAULT_DATA_REPORTS: DataReportsSettings = {
   data_retention_days: 365,
 };
 
-const DEFAULT_INTEGRATIONS: IntegrationsSettings = {
-  accounting_integration_enabled: false,
-  accounting_api_url: "",
-  accounting_api_key: "",
-  payment_gateway_enabled: false,
-  payment_gateway_provider: "",
-  payment_gateway_api_key: "",
-  webhooks_enabled: false,
-  webhooks: [],
-};
-
 const DEFAULT_AUDIT_SECURITY: AuditSecuritySettings = {
   audit_log_enabled: true,
   log_retention_days: 30,
-  log_events: ["login", "logout", "create", "update", "delete"],
-  force_https: false,
-  session_encryption_enabled: true,
   gdpr_compliance_enabled: false,
 };
 
@@ -167,77 +142,123 @@ const DEFAULTS = {
   cashier: DEFAULT_CASHIER,
   notifications: DEFAULT_NOTIFICATIONS,
   data_reports: DEFAULT_DATA_REPORTS,
-  integrations: DEFAULT_INTEGRATIONS,
   audit_security: DEFAULT_AUDIT_SECURITY,
 };
 
 // Allowed keys per category – now matching the full interfaces
 const ALLOWED_KEYS: Record<keyof typeof DEFAULTS, string[]> = {
   general: [
-    "company_name", "store_location", "default_timezone", "timezone",
-    "currency", "language", "receipt_footer_message", "auto_logout_minutes"
+    "company_name",
+    "store_location",
+    "default_timezone",
+    "timezone",
+    "currency",
+    "language",
+    "receipt_footer_message",
   ],
   inventory: [
-    "auto_reorder_enabled", "reorder_level_default", "reorder_qty_default",
-    "stock_alert_threshold", "allow_negative_stock", "inventory_sync_enabled",
-    "auto_update_stock_on_return", "auto_reverse_stock_on_return_cancel",
-    "auto_update_stock_order_confirm", "auto_update_stock_order_complete",
-    "auto_reverse_stock_order_cancel", "auto_reverse_stock_order_refund",
-    "auto_update_stock_purchase_received", "auto_reverse_stock_purchase_cancel"
+    "auto_reorder_enabled",
+    "reorder_level_default",
+    "reorder_qty_default",
+    "stock_alert_threshold",
+    "allow_negative_stock",
+    "inventory_sync_enabled",
+    "auto_update_stock_on_return",
+    "auto_reverse_stock_on_return_cancel",
+    "auto_update_stock_order_confirm",
+    "auto_update_stock_order_complete",
+    "auto_reverse_stock_order_cancel",
+    "auto_reverse_stock_order_refund",
+    "auto_update_stock_purchase_received",
+    "auto_reverse_stock_purchase_cancel",
   ],
   sales: [
-    "discount_enabled", "max_discount_percent", "allow_refunds",
-    "refund_window_days", "loyalty_points_enabled", "loyalty_points_rate",
-    "loyalty_points_earn_on_confirm", "tax_rate", "vat_rate", "supplier_tax_rate",
-    "tax_calculation", "tax_enabled", "tax_flat_amount", "import_duty_rate",
-    "excise_tax_rate", "digital_services_tax_rate", "round_tax_at_subtotal",
-    "prices_include_tax"
+    "discount_enabled",
+    "max_discount_percent",
+    "allow_refunds",
+    "refund_window_days",
+    "loyalty_points_enabled",
+    "loyalty_points_rate",
+    "vat_rate",
+    "supplier_tax_rate",
+    "tax_enabled",
+    "round_tax_at_subtotal",
+    "prices_include_tax",
   ],
   cashier: [
-    "enable_cash_drawer", "drawer_open_code", "enable_receipt_printing",
-    "receipt_printer_type", "enable_barcode_scanning", "enable_touchscreen_mode",
-    "quick_sale_enabled", "cash_drawer_connection", "cash_drawer_device_path"
+    "enable_cash_drawer",
+    "drawer_open_code",
+    "enable_receipt_printing",
+    "receipt_printer_type",
+    "enable_barcode_scanning",
+    "cash_drawer_connection",
+    "cash_drawer_device_path",
   ],
   notifications: [
-    "email_enabled", "sms_enabled", "sms_provider", "push_notifications_enabled",
-    "low_stock_alert_enabled", "daily_sales_summary_enabled",
-    "enable_email_alerts", "enable_sms_alerts", "reminder_interval_hours",
-    "smtp_host", "smtp_port", "smtp_username", "smtp_password",
-    "smtp_use_ssl", "smtp_from_email", "smtp_from_name",
-    "twilio_account_sid", "twilio_auth_token", "twilio_phone_number",
+    "email_enabled",
+    "sms_enabled",
+    "sms_provider",
+    "push_notifications_enabled",
+    "low_stock_alert_enabled",
+    "daily_sales_summary_enabled",
+    "enable_email_alerts",
+    "enable_sms_alerts",
+    "reminder_interval_hours",
+    "smtp_host",
+    "smtp_port",
+    "smtp_username",
+    "smtp_password",
+    "smtp_use_ssl",
+    "smtp_from_email",
+    "smtp_from_name",
+    "twilio_account_sid",
+    "twilio_auth_token",
+    "twilio_phone_number",
     "twilio_messaging_service_sid",
-    "notify_supplier_with_sms", "notify_supplier_with_email",
-    "notify_supplier_on_complete_email", "notify_supplier_on_complete_sms",
-    "notify_supplier_on_cancel_email", "notify_supplier_on_cancel_sms",
-    "notify_supplier_purchase_confirmed_email", "notify_supplier_purchase_confirmed_sms",
-    "notify_supplier_purchase_received_email", "notify_supplier_purchase_received_sms",
-    "notify_supplier_purchase_cancelled_email", "notify_supplier_purchase_cancelled_sms",
-    "notify_customer_return_processed_email", "notify_customer_return_processed_sms",
-    "notify_customer_return_cancelled_email", "notify_customer_return_cancelled_sms",
-    "notify_customer_order_confirmed_email", "notify_customer_order_confirmed_sms",
-    "notify_customer_order_completed_email", "notify_customer_order_completed_sms",
-    "notify_customer_order_cancelled_email", "notify_customer_order_cancelled_sms",
-    "notify_customer_order_refunded_email", "notify_customer_order_refunded_sms"
+    "notify_supplier_with_sms",
+    "notify_supplier_with_email",
+    "notify_supplier_on_complete_email",
+    "notify_supplier_on_complete_sms",
+    "notify_supplier_on_cancel_email",
+    "notify_supplier_on_cancel_sms",
+    "notify_supplier_purchase_confirmed_email",
+    "notify_supplier_purchase_confirmed_sms",
+    "notify_supplier_purchase_received_email",
+    "notify_supplier_purchase_received_sms",
+    "notify_supplier_purchase_cancelled_email",
+    "notify_supplier_purchase_cancelled_sms",
+    "notify_customer_return_processed_email",
+    "notify_customer_return_processed_sms",
+    "notify_customer_return_cancelled_email",
+    "notify_customer_return_cancelled_sms",
+    "notify_customer_order_confirmed_email",
+    "notify_customer_order_confirmed_sms",
+    "notify_customer_order_completed_email",
+    "notify_customer_order_completed_sms",
+    "notify_customer_order_cancelled_email",
+    "notify_customer_order_cancelled_sms",
+    "notify_customer_order_refunded_email",
+    "notify_customer_order_refunded_sms",
   ],
   data_reports: [
-    "export_formats", "default_export_format", "auto_backup_enabled",
-    "backup_schedule", "backup_location", "data_retention_days"
-  ],
-  integrations: [
-    "accounting_integration_enabled", "accounting_api_url", "accounting_api_key",
-    "payment_gateway_enabled", "payment_gateway_provider", "payment_gateway_api_key",
-    "webhooks_enabled", "webhooks"
+    "export_formats",
+    "default_export_format",
+    "auto_backup_enabled",
+    "backup_schedule",
+    "backup_location",
+    "data_retention_days",
   ],
   audit_security: [
-    "audit_log_enabled", "log_retention_days", "log_events", "force_https",
-    "session_encryption_enabled", "gdpr_compliance_enabled"
+    "audit_log_enabled",
+    "log_retention_days",
+    "gdpr_compliance_enabled",
   ],
 };
 
 // Helper: sanitize object to only allowed keys
 function sanitizeSettings<T extends Record<string, any>>(
   obj: T,
-  allowedKeys: string[]
+  allowedKeys: string[],
 ): Partial<T> {
   const result: Partial<T> = {};
   for (const key of allowedKeys) {
@@ -265,30 +286,56 @@ export const useSettings = () => {
       if (configRes.status && configRes.data) {
         const apiSettings = configRes.data.grouped_settings;
         setGroupedConfig((prev) => ({
-          general: apiSettings.general !== undefined
-            ? { ...DEFAULTS.general, ...apiSettings.general }
-            : prev.general,
-          inventory: apiSettings.inventory !== undefined
-            ? { ...DEFAULTS.inventory, ...apiSettings.inventory }
-            : prev.inventory,
-          sales: apiSettings.sales !== undefined
-            ? { ...DEFAULTS.sales, ...apiSettings.sales }
-            : prev.sales,
-          cashier: apiSettings.cashier !== undefined
-            ? { ...DEFAULTS.cashier, ...apiSettings.cashier }
-            : prev.cashier,
-          notifications: apiSettings.notifications !== undefined
-            ? { ...DEFAULTS.notifications, ...apiSettings.notifications }
-            : prev.notifications,
-          data_reports: apiSettings.data_reports !== undefined
-            ? { ...DEFAULTS.data_reports, ...apiSettings.data_reports }
-            : prev.data_reports,
-          integrations: apiSettings.integrations !== undefined
-            ? { ...DEFAULTS.integrations, ...apiSettings.integrations }
-            : prev.integrations,
-          audit_security: apiSettings.audit_security !== undefined
-            ? { ...DEFAULTS.audit_security, ...apiSettings.audit_security }
-            : prev.audit_security,
+          general:
+            apiSettings.general && Object.keys(apiSettings.general).length > 0
+              ? {
+                  ...DEFAULTS.general,
+                  ...parseNumericValues(apiSettings.general),
+                }
+              : prev.general,
+          inventory:
+            apiSettings.inventory &&
+            Object.keys(apiSettings.inventory).length > 0
+              ? {
+                  ...DEFAULTS.inventory,
+                  ...parseNumericValues(apiSettings.inventory),
+                }
+              : prev.inventory,
+          sales:
+            apiSettings.sales && Object.keys(apiSettings.sales).length > 0
+              ? { ...DEFAULTS.sales, ...parseNumericValues(apiSettings.sales) }
+              : prev.sales,
+          cashier:
+            apiSettings.cashier && Object.keys(apiSettings.cashier).length > 0
+              ? {
+                  ...DEFAULTS.cashier,
+                  ...parseNumericValues(apiSettings.cashier),
+                }
+              : prev.cashier,
+          notifications:
+            apiSettings.notifications &&
+            Object.keys(apiSettings.notifications).length > 0
+              ? {
+                  ...DEFAULTS.notifications,
+                  ...parseNumericValues(apiSettings.notifications),
+                }
+              : prev.notifications,
+          data_reports:
+            apiSettings.data_reports &&
+            Object.keys(apiSettings.data_reports).length > 0
+              ? {
+                  ...DEFAULTS.data_reports,
+                  ...parseNumericValues(apiSettings.data_reports),
+                }
+              : prev.data_reports,
+          audit_security:
+            apiSettings.audit_security &&
+            Object.keys(apiSettings.audit_security).length > 0
+              ? {
+                  ...DEFAULTS.audit_security,
+                  ...parseNumericValues(apiSettings.audit_security),
+                }
+              : prev.audit_security,
         }));
       }
       const infoRes = await systemConfigAPI.getSystemInfo();
@@ -311,7 +358,7 @@ export const useSettings = () => {
     <C extends keyof typeof DEFAULTS>(
       category: C,
       field: keyof (typeof DEFAULTS)[C],
-      value: any
+      value: any,
     ) => {
       setGroupedConfig((prev) => ({
         ...prev,
@@ -321,12 +368,15 @@ export const useSettings = () => {
         },
       }));
     },
-    []
+    [],
   );
 
   // Update multiple fields in a category at once (for optimistic updates)
   const setCategoryData = useCallback(
-    <C extends keyof typeof DEFAULTS>(category: C, data: Partial<(typeof DEFAULTS)[C]>) => {
+    <C extends keyof typeof DEFAULTS>(
+      category: C,
+      data: Partial<(typeof DEFAULTS)[C]>,
+    ) => {
       setGroupedConfig((prev) => ({
         ...prev,
         [category]: {
@@ -335,47 +385,47 @@ export const useSettings = () => {
         },
       }));
     },
-    []
+    [],
   );
 
   // Save a single category
   const saveCategory = useCallback(
-    async (category: keyof typeof DEFAULTS) => {
-      const dataToSend = sanitizeSettings(groupedConfig[category], ALLOWED_KEYS[category]);
-      if (Object.keys(dataToSend).length === 0) {
-        // Nothing changed
-        return;
-      }
+    async (
+      category: keyof typeof DEFAULTS,
+      dataToSave?: Partial<(typeof DEFAULTS)[typeof category]>,
+    ) => {
+      // Use provided data if given, otherwise fall back to groupedConfig[category]
+      const sourceData =
+        dataToSave !== undefined ? dataToSave : groupedConfig[category];
+      const payload = sanitizeSettings(sourceData, ALLOWED_KEYS[category]);
+      if (Object.keys(payload).length === 0) return;
+
       setSaving(true);
       setError(null);
       setSuccessMessage(null);
+
       try {
         const response = await systemConfigAPI.updateGroupedConfig({
-          [category]: dataToSend,
+          [category]: payload,
         });
+
         if (!response.status) {
-          throw new Error(response.message || `Failed to save ${category} settings`);
+          throw new Error(
+            response.message || `Failed to save ${category} settings`,
+          );
         }
-        // Update state with response data if available (ensures timestamps are fresh)
-        if (response.data?.grouped_settings?.[category]) {
-          setGroupedConfig((prev) => ({
-            ...prev,
-            [category]: { ...DEFAULTS[category], ...response.data?.grouped_settings[category] },
-          }));
-        }
+
+        // Optimistic update already applied by caller, but refetch to ensure consistency
+        await fetchSettings();
+
         setSuccessMessage(`${category} settings saved successfully`);
-        // Optionally refresh system info
-        const infoRes = await systemConfigAPI.getSystemInfo();
-        if (infoRes.status && infoRes.data) {
-          setSystemInfo(infoRes.data);
-        }
       } catch (err: any) {
         setError(err.message || `Failed to save ${category} settings`);
       } finally {
         setSaving(false);
       }
     },
-    [groupedConfig]
+    [groupedConfig, fetchSettings],
   );
 
   // Save all categories (for "Save All" button)
@@ -384,21 +434,30 @@ export const useSettings = () => {
     setError(null);
     setSuccessMessage(null);
 
-    const categories = Object.keys(groupedConfig) as Array<keyof typeof DEFAULTS>;
+    const categories = Object.keys(groupedConfig) as Array<
+      keyof typeof DEFAULTS
+    >;
     const results = await Promise.allSettled(
       categories.map(async (category) => {
-        const dataToSend = sanitizeSettings(groupedConfig[category], ALLOWED_KEYS[category]);
+        const dataToSend = sanitizeSettings(
+          groupedConfig[category],
+          ALLOWED_KEYS[category],
+        );
         if (Object.keys(dataToSend).length === 0) return; // skip unchanged
         return systemConfigAPI.updateGroupedConfig({
           [category]: dataToSend,
         });
-      })
+      }),
     );
 
     const failed = results.filter((r) => r.status === "rejected");
     if (failed.length > 0) {
-      const errors = failed.map((f) => (f as PromiseRejectedResult).reason?.message || "Unknown error");
-      setError(`Failed to save ${failed.length} category(s): ${errors.join("; ")}`);
+      const errors = failed.map(
+        (f) => (f as PromiseRejectedResult).reason?.message || "Unknown error",
+      );
+      setError(
+        `Failed to save ${failed.length} category(s): ${errors.join("; ")}`,
+      );
     } else {
       setSuccessMessage("All settings saved successfully");
       // Refresh to get latest timestamps
@@ -461,7 +520,8 @@ export const useSettings = () => {
 
   const testSmtpConnection = async () => {
     try {
-      if (!window.backendAPI?.systemConfig) throw new Error("Electron API not available");
+      if (!window.backendAPI?.systemConfig)
+        throw new Error("Electron API not available");
       const response = await window.backendAPI.systemConfig({
         method: "testSmtpConnection",
         params: { settings: groupedConfig.notifications },
@@ -475,12 +535,14 @@ export const useSettings = () => {
 
   const testSmsConnection = async () => {
     try {
-      if (!window.backendAPI?.systemConfig) throw new Error("Electron API not available");
+      if (!window.backendAPI?.systemConfig)
+        throw new Error("Electron API not available");
       const response = await window.backendAPI.systemConfig({
         method: "testSmsConnection",
         params: { settings: groupedConfig.notifications },
       });
-      if (response.status) setSuccessMessage("SMS (Twilio) connection successful");
+      if (response.status)
+        setSuccessMessage("SMS (Twilio) connection successful");
       else setError(response.message || "SMS connection failed");
     } catch (err: any) {
       setError(err.message || "Failed to test SMS connection");
@@ -496,14 +558,20 @@ export const useSettings = () => {
     successMessage,
     setError,
     setSuccessMessage,
-    updateGeneral: (field: keyof GeneralSettings, value: any) => updateCategoryField("general", field, value),
-    updateInventory: (field: keyof InventorySettings, value: any) => updateCategoryField("inventory", field, value),
-    updateSales: (field: keyof SalesSettings, value: any) => updateCategoryField("sales", field, value),
-    updateCashier: (field: keyof CashierSettings, value: any) => updateCategoryField("cashier", field, value),
-    updateNotifications: (field: keyof NotificationsSettings, value: any) => updateCategoryField("notifications", field, value),
-    updateDataReports: (field: keyof DataReportsSettings, value: any) => updateCategoryField("data_reports", field, value),
-    updateIntegrations: (field: keyof IntegrationsSettings, value: any) => updateCategoryField("integrations", field, value),
-    updateAuditSecurity: (field: keyof AuditSecuritySettings, value: any) => updateCategoryField("audit_security", field, value),
+    updateGeneral: (field: keyof GeneralSettings, value: any) =>
+      updateCategoryField("general", field, value),
+    updateInventory: (field: keyof InventorySettings, value: any) =>
+      updateCategoryField("inventory", field, value),
+    updateSales: (field: keyof SalesSettings, value: any) =>
+      updateCategoryField("sales", field, value),
+    updateCashier: (field: keyof CashierSettings, value: any) =>
+      updateCategoryField("cashier", field, value),
+    updateNotifications: (field: keyof NotificationsSettings, value: any) =>
+      updateCategoryField("notifications", field, value),
+    updateDataReports: (field: keyof DataReportsSettings, value: any) =>
+      updateCategoryField("data_reports", field, value),
+    updateAuditSecurity: (field: keyof AuditSecuritySettings, value: any) =>
+      updateCategoryField("audit_security", field, value),
     setCategoryData,
     saveCategory,
     saveSettings,
@@ -515,3 +583,15 @@ export const useSettings = () => {
     testSmsConnection,
   };
 };
+
+function parseNumericValues(obj: any): any {
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === "string" && /^-?\d+(\.\d+)?$/.test(value)) {
+      result[key] = parseFloat(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}

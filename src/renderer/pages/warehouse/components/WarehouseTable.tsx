@@ -69,6 +69,9 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={warehouses.length > 0 && selectedWarehouses.length === warehouses.length}
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
@@ -147,6 +150,9 @@ const WarehouseTable: React.FC<WarehouseTableProps> = ({
               <td className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   checked={selectedWarehouses.includes(warehouse.id)}
                   onChange={() => onToggleSelect(warehouse.id)}
                   className="h-3 w-3 rounded border-gray-300"

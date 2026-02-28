@@ -16,7 +16,7 @@ const {
   shell,
   // @ts-ignore
   BrowserWindow,
-// @ts-ignore
+  // @ts-ignore
 } = require("electron");
 const path = require("path");
 const fs = require("fs").promises;
@@ -132,7 +132,7 @@ async function log(level, message, data = null, writeToFile = false) {
 
       const logFile = path.join(
         logDir,
-        `Inventory-${new Date().toISOString().split("T")[0]}.log`
+        `Inventory-${new Date().toISOString().split("T")[0]}.log`,
       );
       const logEntry = `${logMessage}${
         data ? "\n" + JSON.stringify(data, null, 2) : ""
@@ -197,7 +197,7 @@ function setupGlobalErrorHandlers() {
         stack: error.stack,
         timestamp: new Date().toISOString(),
       },
-      true
+      true,
     );
 
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -218,7 +218,7 @@ function setupGlobalErrorHandlers() {
         promise: promise.toString(),
         timestamp: new Date().toISOString(),
       },
-      true
+      true,
     );
   });
 
@@ -233,7 +233,7 @@ function setupGlobalErrorHandlers() {
         webContentsId: webContents.id,
         timestamp: new Date().toISOString(),
       },
-      true
+      true,
     );
   });
 }
@@ -255,7 +255,7 @@ async function initializeDatabase() {
     if (status.needsMigration) {
       log(
         LogLevel.INFO,
-        `Found ${status.pending} pending migration(s). Running now...`
+        `Found ${status.pending} pending migration(s). Running now...`,
       );
 
       if (splashWindow && !splashWindow.isDestroyed()) {
@@ -391,7 +391,7 @@ async function createSplashWindow() {
     throw new WindowError(
       // @ts-ignore
       `Failed to create splash window: ${error.message}`,
-      "splash"
+      "splash",
     );
   }
 }
@@ -430,7 +430,7 @@ async function getAppUrl() {
   }
 
   throw new Error(
-    `Production build not found. Checked paths:\n${possiblePaths.join("\n")}`
+    `Production build not found. Checked paths:\n${possiblePaths.join("\n")}`,
   );
 }
 
@@ -550,7 +550,7 @@ async function createMainWindow() {
       throw new Error(
         APP_CONFIG.isDev
           ? "Dev server not running. Run 'npm run dev' first."
-          : "Production build not found or corrupted."
+          : "Production build not found or corrupted.",
       );
     }
 
@@ -565,7 +565,7 @@ async function createMainWindow() {
             log(LogLevel.WARN, "Periodic update check failed", err.message);
           });
         },
-        30 * 60 * 1000
+        30 * 60 * 1000,
       );
     });
 
@@ -574,7 +574,7 @@ async function createMainWindow() {
     throw new WindowError(
       // @ts-ignore
       `Failed to create main window: ${error.message}`,
-      "main"
+      "main",
     );
   }
 }
@@ -851,11 +851,11 @@ async function startupSequence() {
   try {
     log(
       LogLevel.INFO,
-      `🚀 Starting ${APP_CONFIG.appName} v${APP_CONFIG.version}...`
+      `🚀 Starting ${APP_CONFIG.appName} v${APP_CONFIG.version}...`,
     );
     log(
       LogLevel.INFO,
-      `Environment: ${APP_CONFIG.isDev ? "Development" : "Production"}`
+      `Environment: ${APP_CONFIG.isDev ? "Development" : "Production"}`,
     );
     log(LogLevel.INFO, `User Data Path: ${APP_CONFIG.userDataPath}`);
 
@@ -903,10 +903,25 @@ async function startupSequence() {
     // 7. Create main window
     await createMainWindow();
 
+    // After database initialized, run background stock item initializer
+    if (isDatabaseInitialized) {
+      const {
+        initializeMissingStockItems,
+      } = require("../utils/stockItemInitializer");
+      // Run asynchronously, do not await
+      initializeMissingStockItems().catch((err) => {
+        log(LogLevel.ERROR, "Background stock item initializer failed", err);
+      });
+    }
+
     // 8. Early update check (after main window loads)
     setTimeout(() => {
       checkForUpdates().catch((err) => {
-        log(LogLevel.WARN, "Update check failed, continuing startup", err.message);
+        log(
+          LogLevel.WARN,
+          "Update check failed, continuing startup",
+          err.message,
+        );
       });
     }, 1000);
 
@@ -936,7 +951,7 @@ async function startupSequence() {
       // @ts-ignore
       "The application failed to start properly.",
       // @ts-ignore
-      error.message
+      error.message,
     );
 
     errorWindow.show();

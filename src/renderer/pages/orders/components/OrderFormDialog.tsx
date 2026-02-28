@@ -1,5 +1,5 @@
 // src/renderer/pages/sales/components/SalesFormDialog.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
@@ -8,15 +8,12 @@ import ProductSelect from "../../../components/Selects/Product";
 import ProductVariantSelect from "../../../components/Selects/ProductVariant";
 import WarehouseSelect from "../../../components/Selects/Warehouse";
 import { dialogs } from "../../../utils/dialogs";
-import type {
-  Order,
-  OrderCreateData,
-  OrderUpdateData,
-} from "../../../api/core/order";
+import type { Order, OrderCreateData, OrderUpdateData } from "../../../api/core/order";
 import orderAPI from "../../../api/core/order";
 import customerAPI, { type Customer } from "../../../api/core/customer";
 import { Trash2, Plus, ChevronDown, ChevronUp, Award } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
+import { useSalesSettings, useTaxSettings } from "../../../utils/configUtils/sales";
 
 interface SalesFormDialogProps {
   isOpen: boolean;
@@ -63,6 +60,10 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
   const [customerBalance, setCustomerBalance] = useState(0);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
 
+  // Load tax settings
+  const { vat_rate, prices_include_tax } = useTaxSettings();
+  const { tax_enabled } = useSalesSettings();
+
   const {
     register,
     handleSubmit,
@@ -93,30 +94,53 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
   const subtotal = watch("subtotal");
   const total = watch("total");
 
+  // Compute tax based on subtotal and settings
+  const { subtotalExclTax, taxAmount, totalBeforePoints } = useMemo(() => {
+    if (!tax_enabled) {
+      return {
+        subtotalExclTax: subtotal,
+        taxAmount: 0,
+        totalBeforePoints: subtotal,
+      };
+    }
+    if (prices_include_tax) {
+      // Subtotal already includes VAT, extract net and VAT
+      const net = subtotal / (1 + vat_rate / 100);
+      const tax = subtotal - net;
+      return { subtotalExclTax: net, taxAmount: tax, totalBeforePoints: subtotal };
+    } else {
+      // Subtotal is net of VAT, add VAT
+      const tax = subtotal * (vat_rate / 100);
+      return { subtotalExclTax: subtotal, taxAmount: tax, totalBeforePoints: subtotal + tax };
+    }
+  }, [subtotal, tax_enabled, vat_rate, prices_include_tax]);
+
+  // Final total after points discount
+  const finalTotal = Math.max(0, totalBeforePoints - (usePoints ? pointsAmount : 0));
+
   // Helper to recalc totals from current items and points
   const recalcTotals = useCallback(
     (currentItems: OrderItemForm[]) => {
-      const sub = currentItems.reduce(
-        (sum, item) => sum + (item.total || 0),
-        0,
-      );
+      const sub = currentItems.reduce((sum, item) => sum + (item.total || 0), 0);
       setValue("subtotal", sub);
-      setValue("total", Math.max(0, sub - (usePoints ? pointsAmount : 0)));
+      // total will be updated via useEffect watching subtotal/points
     },
-    [setValue, usePoints, pointsAmount],
+    [setValue]
   );
+
+  // Update total whenever subtotal or points change
+  useEffect(() => {
+    setValue("total", finalTotal);
+  }, [finalTotal, setValue]);
 
   // Update an item and immediately recalc totals
   const updateItem = (index: number, updates: Partial<OrderItemForm>) => {
-    const currentItems = getValues("items"); // get latest array
+    const currentItems = getValues("items");
     const current = currentItems[index];
     const updated = { ...current, ...updates };
     updated.total = updated.quantity * updated.unit_price;
 
-    // Update the item in form state
     setValue(`items.${index}`, updated);
-
-    // Recompute totals using the updated items array
     const newItems = [...currentItems];
     newItems[index] = updated;
     recalcTotals(newItems);
@@ -146,49 +170,42 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
     fetchCustomer();
   }, [customerId]);
 
-  // Handle points checkbox
   const handleUsePointsChange = (checked: boolean) => {
     setUsePoints(checked);
     if (!checked) {
       setPointsAmount(0);
     }
-    // Recalc totals immediately
+    // Recalc totals (total will update via useEffect)
     const currentItems = getValues("items");
     recalcTotals(currentItems);
   };
 
   const handleUseAllPoints = () => {
-    const maxPoints = Math.min(customerBalance, subtotal);
+    const maxPoints = Math.min(customerBalance, totalBeforePoints);
     setPointsAmount(maxPoints);
-    // Recalc totals
-    const currentItems = getValues("items");
-    recalcTotals(currentItems);
   };
 
-  // Validate points
   const pointsError =
     usePoints && pointsAmount > customerBalance
       ? "Insufficient points"
-      : usePoints && pointsAmount > subtotal
-        ? "Points exceed total"
-        : "";
+      : usePoints && pointsAmount > totalBeforePoints
+      ? "Points exceed total"
+      : "";
 
   // Populate form when editing
   useEffect(() => {
     if (mode === "edit" && initialData) {
-      const formItems: OrderItemForm[] = (initialData.items || []).map(
-        (item) => ({
-          productId: item.product?.id || null,
-          productName: item.product?.name,
-          variantId: item.variant?.id || null,
-          variantName: item.variant?.name,
-          warehouseId: item.warehouse?.id || null,
-          warehouseName: item.warehouse?.name,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total: item.line_gross_total,
-        }),
-      );
+      const formItems: OrderItemForm[] = (initialData.items || []).map((item) => ({
+        productId: item.product?.id || null,
+        productName: item.product?.name,
+        variantId: item.variant?.id || null,
+        variantName: item.variant?.name,
+        warehouseId: item.warehouse?.id || null,
+        warehouseName: item.warehouse?.name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total: item.line_gross_total,
+      }));
 
       reset({
         order_number: initialData.order_number || "",
@@ -224,25 +241,23 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
       unit_price: 0,
       total: 0,
     });
-    setExpandedItems((prev) => [...prev, fields.length]); // expand new item
-    // No need to recalc totals because new item total is 0
+    setExpandedItems((prev) => [...prev, fields.length]);
   };
 
   const removeItem = (index: number) => {
     remove(index);
-    // After removal, recalc totals with updated items (using setTimeout to let form update)
     setTimeout(() => {
       const currentItems = getValues("items");
       recalcTotals(currentItems);
     }, 0);
     setExpandedItems((prev) =>
-      prev.filter((i) => i !== index).map((i) => (i > index ? i - 1 : i)),
+      prev.filter((i) => i !== index).map((i) => (i > index ? i - 1 : i))
     );
   };
 
   const toggleExpand = (index: number) => {
     setExpandedItems((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   };
 
@@ -262,9 +277,9 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
       }))
     )
       return;
+
     try {
-      if (data.items.length === 0)
-        throw new Error("At least one item is required");
+      if (data.items.length === 0) throw new Error("At least one item is required");
 
       const payload = {
         order_number: data.order_number,
@@ -301,22 +316,25 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
       isOpen={isOpen}
       safetyClose={true}
       onClose={async () => {
+        if (
+          !(await dialogs.confirm({
+            title: "Close Order Dialog",
+            message: "Are you sure do you want to close this dialog?.",
+          }))
+        )
+          return;
         onClose();
       }}
       title={mode === "add" ? "Create Order" : "Edit Order"}
       size="xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
-        {/* Scrollable main content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left Column: Customer, Notes, Points */}
+            {/* Left Column: Customer, Notes, Points, Summary */}
             <div className="space-y-4">
               <div className="bg-[var(--card-secondary-bg)] p-3 rounded-md space-y-3">
-                <h3
-                  className="text-sm font-medium"
-                  style={{ color: "var(--sidebar-text)" }}
-                >
+                <h3 className="text-sm font-medium" style={{ color: "var(--sidebar-text)" }}>
                   Customer Information
                 </h3>
                 <CustomerSelect
@@ -373,18 +391,15 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
                         <input
                           type="number"
                           min="0"
-                          max={Math.min(customerBalance, subtotal)}
+                          max={Math.min(customerBalance, totalBeforePoints)}
                           value={pointsAmount}
                           onChange={(e) => {
                             const val = Math.min(
                               Number(e.target.value),
                               customerBalance,
-                              subtotal,
+                              totalBeforePoints
                             );
                             setPointsAmount(val);
-                            // Recalc totals
-                            const currentItems = getValues("items");
-                            recalcTotals(currentItems);
                           }}
                           className="compact-input flex-1 border rounded-md"
                           style={{
@@ -406,32 +421,42 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
                         <p className="text-xs text-red-500">{pointsError}</p>
                       )}
                       <div className="text-xs text-[var(--text-secondary)]">
-                        Available: {customerBalance} pts | Max use: {subtotal}{" "}
-                        pts
+                        Available: {customerBalance} pts | Max use: {totalBeforePoints.toFixed(0)} pts
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Order Summary Card */}
+              {/* Order Summary Card with Tax Breakdown */}
               {items.length > 0 && (
                 <div className="bg-[var(--card-secondary-bg)] p-3 rounded-md">
-                  <h3
-                    className="text-sm font-medium mb-2"
-                    style={{ color: "var(--sidebar-text)" }}
-                  >
+                  <h3 className="text-sm font-medium mb-2" style={{ color: "var(--sidebar-text)" }}>
                     Order Summary
                   </h3>
                   <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-secondary)]">
-                        Subtotal:
-                      </span>
-                      <span className="font-medium">
-                        {formatCurrency(subtotal)}
-                      </span>
-                    </div>
+                    {tax_enabled && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-secondary)]">Subtotal (excl. tax):</span>
+                          <span className="font-medium">{formatCurrency(subtotalExclTax)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-secondary)]">VAT ({vat_rate}%):</span>
+                          <span className="font-medium">{formatCurrency(taxAmount)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-dashed pt-1">
+                          <span className="font-medium">Total before points:</span>
+                          <span className="font-bold">{formatCurrency(totalBeforePoints)}</span>
+                        </div>
+                      </>
+                    )}
+                    {!tax_enabled && (
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-secondary)]">Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(subtotal)}</span>
+                      </div>
+                    )}
                     {usePoints && pointsAmount > 0 && (
                       <div className="flex justify-between text-[var(--accent-green)]">
                         <span>Points discount:</span>
@@ -444,9 +469,14 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
                     >
                       <span className="font-medium">Total:</span>
                       <span className="font-bold text-[var(--accent-green)]">
-                        {formatCurrency(total)}
+                        {formatCurrency(finalTotal)}
                       </span>
                     </div>
+                    {tax_enabled && (
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        *Prices {prices_include_tax ? "include" : "exclude"} VAT
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -455,10 +485,7 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
             {/* Right Column: Order Items */}
             <div className="bg-[var(--card-secondary-bg)] p-3 rounded-md flex flex-col">
               <div className="flex items-center justify-between mb-2 shrink-0">
-                <h3
-                  className="text-sm font-medium"
-                  style={{ color: "var(--sidebar-text)" }}
-                >
+                <h3 className="text-sm font-medium" style={{ color: "var(--sidebar-text)" }}>
                   Items ({items.length})
                 </h3>
                 <div className="flex gap-1">
@@ -517,10 +544,7 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
                           onClick={() => toggleExpand(index)}
                         >
                           <div className="flex items-center gap-2 text-sm">
-                            <span
-                              className="font-medium"
-                              style={{ color: "var(--sidebar-text)" }}
-                            >
+                            <span className="font-medium" style={{ color: "var(--sidebar-text)" }}>
                               Item {index + 1}
                             </span>
                             {item.productName && (
@@ -532,10 +556,7 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
                                 {item.variantName && `- ${item.variantName}`}
                               </span>
                             )}
-                            <span
-                              className="text-xs"
-                              style={{ color: "var(--text-secondary)" }}
-                            >
+                            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                               x{item.quantity} = {formatCurrency(item.total)}
                             </span>
                           </div>
@@ -651,8 +672,7 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
                                     value={item.unit_price}
                                     onChange={(e) =>
                                       updateItem(index, {
-                                        unit_price:
-                                          parseFloat(e.target.value) || 0,
+                                        unit_price: parseFloat(e.target.value) || 0,
                                       })
                                     }
                                     className="compact-input w-full border rounded-md"
@@ -710,8 +730,8 @@ const SalesFormDialog: React.FC<SalesFormDialogProps> = ({
             {isSubmitting
               ? "Saving..."
               : mode === "add"
-                ? "Create Order"
-                : "Update Order"}
+              ? "Create Order"
+              : "Update Order"}
           </Button>
         </div>
       </form>

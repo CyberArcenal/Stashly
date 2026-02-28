@@ -87,6 +87,9 @@ const SalesTable: React.FC<SalesTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={
                   orders.length > 0 && selectedOrders.length === orders.length
                 }
@@ -172,8 +175,11 @@ const SalesTable: React.FC<SalesTableProps> = ({
               <td className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   checked={selectedOrders.includes(order.id)}
-                  onChange={() => onToggleSelect(order.id)}
+                  onChange={(e) => {e.stopPropagation(); onToggleSelect(order.id)}}
                   className="h-3 w-3 rounded border-gray-300"
                   style={{ color: "var(--accent-blue)" }}
                 />

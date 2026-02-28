@@ -14,7 +14,6 @@ export class SystemCache {
         this.CACHE_KEYS.CACHE_TIMESTAMP,
         new Date().toISOString()
       );
-      // console.log("System info cached successfully");
     } catch (error) {
       console.error("Failed to cache system info:", error);
     }
@@ -42,7 +41,7 @@ export class SystemCache {
     }
   }
 
-  // Get currency from cache (new method)
+  // Get currency from cache
   getCurrency(): string {
     try {
       // Try to get from system info first
@@ -62,6 +61,35 @@ export class SystemCache {
     } catch (error) {
       console.error("Failed to get currency from cache:", error);
       return "PHP";
+    }
+  }
+
+  /**
+   * Update the currency in both system info and public settings caches.
+   * Call this method whenever the currency setting changes (e.g., after saving settings).
+   */
+  setCurrency(currency: string): void {
+    try {
+      // Update system info cache
+      const systemInfo = this.getSystemInfo();
+      if (systemInfo) {
+        if (!systemInfo.system_info) systemInfo.system_info = {};
+        systemInfo.system_info.currency = currency;
+        localStorage.setItem(this.CACHE_KEYS.SYSTEM_INFO, JSON.stringify(systemInfo));
+      }
+
+      // Update public settings cache
+      const publicSettings = this.getPublicSettings();
+      if (publicSettings) {
+        if (!publicSettings.system) publicSettings.system = {};
+        publicSettings.system.currency = currency;
+        localStorage.setItem(this.CACHE_KEYS.PUBLIC_SETTINGS, JSON.stringify(publicSettings));
+      }
+
+      // Update timestamp to indicate change (optional)
+      localStorage.setItem(this.CACHE_KEYS.CACHE_TIMESTAMP, new Date().toISOString());
+    } catch (error) {
+      console.error("Failed to set currency in cache:", error);
     }
   }
 
@@ -87,7 +115,6 @@ export class SystemCache {
       localStorage.removeItem(this.CACHE_KEYS.SYSTEM_INFO);
       localStorage.removeItem(this.CACHE_KEYS.PUBLIC_SETTINGS);
       localStorage.removeItem(this.CACHE_KEYS.CACHE_TIMESTAMP);
-      // console.log("System cache cleared");
     } catch (error) {
       console.error("Failed to clear system cache:", error);
     }

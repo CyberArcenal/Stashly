@@ -1,5 +1,5 @@
 // src/renderer/pages/settings/components/GeneralSettingsTab.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Building } from "lucide-react";
 import type { GeneralSettings } from "../../../api/core/system_config";
 
@@ -49,9 +49,14 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
       setSaving(false);
     }
   };
-
+  useEffect(() => {
+    setForm(settings);
+  }, [settings]);
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--border-color)] p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--border-color)] p-6"
+    >
       <h2 className="text-lg font-semibold text-[var(--sidebar-text)] mb-6 flex items-center">
         <Building className="w-5 h-5 mr-2" />
         General Settings
@@ -96,7 +101,9 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
             >
               {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>{tz}</option>
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
               ))}
             </select>
           </div>
@@ -111,7 +118,9 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
             >
               {CURRENCIES.map((cur) => (
-                <option key={cur} value={cur}>{cur}</option>
+                <option key={cur} value={cur}>
+                  {cur}
+                </option>
               ))}
             </select>
           </div>
@@ -128,7 +137,9 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
             >
               {LANGUAGES.map((lang) => (
-                <option key={lang.value} value={lang.value}>{lang.label}</option>
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
               ))}
             </select>
           </div>
@@ -139,24 +150,31 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
             </label>
             <textarea
               value={form.receipt_footer_message || ""}
-              onChange={(e) => handleChange("receipt_footer_message", e.target.value)}
+              onChange={(e) =>
+                handleChange("receipt_footer_message", e.target.value)
+              }
               rows={3}
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Auto Logout (minutes)
             </label>
             <input
               type="number"
               value={form.auto_logout_minutes || 30}
-              onChange={(e) => handleChange("auto_logout_minutes", parseInt(e.target.value) || 30)}
+              onChange={(e) =>
+                handleChange(
+                  "auto_logout_minutes",
+                  parseInt(e.target.value) || 30,
+                )
+              }
               className="w-full p-3 border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--sidebar-text)]"
               min="0"
             />
-          </div>
+          </div> */}
         </div>
       </div>
 

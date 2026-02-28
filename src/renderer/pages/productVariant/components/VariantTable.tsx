@@ -82,6 +82,9 @@ const VariantTable: React.FC<VariantTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={variants.length > 0 && selectedVariants.length === variants.length}
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
@@ -179,6 +182,9 @@ const VariantTable: React.FC<VariantTableProps> = ({
                 <td className="px-2 py-2 whitespace-nowrap">
                   <input
                     type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                     checked={selectedVariants.includes(variant.id)}
                     onChange={() => onToggleSelect(variant.id)}
                     className="h-3 w-3 rounded border-gray-300"

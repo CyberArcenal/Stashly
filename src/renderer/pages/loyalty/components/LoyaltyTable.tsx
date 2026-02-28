@@ -62,6 +62,9 @@ const LoyaltyTable: React.FC<LoyaltyTableProps> = ({
             >
               <input
                 type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 checked={transactions.length > 0 && selectedTransactions.length === transactions.length}
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
@@ -147,6 +150,9 @@ const LoyaltyTable: React.FC<LoyaltyTableProps> = ({
               <td className="px-2 py-2 whitespace-nowrap">
                 <input
                   type="checkbox"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   checked={selectedTransactions.includes(tx.id)}
                   onChange={() => onToggleSelect(tx.id)}
                   className="h-3 w-3 rounded border-gray-300"

@@ -67,7 +67,6 @@ export interface GroupedSettingsData {
     cashier: CashierSettings;
     notifications: NotificationsSettings;
     data_reports: DataReportsSettings;
-    integrations: IntegrationsSettings;
     audit_security: AuditSecuritySettings;
   };
   system_info: SystemInfoData;
@@ -82,7 +81,6 @@ export interface GeneralSettings {
   currency?: string;
   language?: string;
   receipt_footer_message?: string;
-  auto_logout_minutes?: number;
 }
 
 // 2. INVENTORY SETTINGS (including stock auto‑update flags)
@@ -106,23 +104,16 @@ export interface InventorySettings {
 
 // 3. SALES SETTINGS (includes basic tax fields)
 export interface SalesSettings {
-  tax_rate?: number;
   discount_enabled?: boolean;
   max_discount_percent?: number;
   allow_refunds?: boolean;
   refund_window_days?: number;
   loyalty_points_enabled?: boolean;
   loyalty_points_rate?: number;      // points per currency unit
-  loyalty_points_earn_on_confirm?: boolean;
-  // Extended tax fields (if stored individually)
+  // Extended tax fields
   vat_rate?: number;
   supplier_tax_rate?: number;
-  tax_calculation?: "inclusive" | "exclusive";
   tax_enabled?: boolean;
-  tax_flat_amount?: number;
-  import_duty_rate?: number;
-  excise_tax_rate?: number;
-  digital_services_tax_rate?: number;
   round_tax_at_subtotal?: boolean;
   prices_include_tax?: boolean;
 }
@@ -134,8 +125,6 @@ export interface CashierSettings {
   enable_receipt_printing?: boolean;
   receipt_printer_type?: string;     // thermal, dot-matrix
   enable_barcode_scanning?: boolean;
-  enable_touchscreen_mode?: boolean;
-  quick_sale_enabled?: boolean;
   cash_drawer_connection?: string;   // printer, usb, serial
   cash_drawer_device_path?: string;
 }
@@ -209,32 +198,10 @@ export interface DataReportsSettings {
   data_retention_days?: number;
 }
 
-// 7. INTEGRATIONS SETTINGS
-export interface IntegrationsSettings {
-  accounting_integration_enabled?: boolean;
-  accounting_api_url?: string;
-  accounting_api_key?: string;
-  payment_gateway_enabled?: boolean;
-  payment_gateway_provider?: string;
-  payment_gateway_api_key?: string;
-  webhooks_enabled?: boolean;
-  webhooks?: WebhookSetting[];
-}
-
-export interface WebhookSetting {
-  url: string;
-  events: string[];
-  enabled: boolean;
-  secret?: string;
-}
-
-// 8. AUDIT & SECURITY SETTINGS
+// 7. AUDIT & SECURITY SETTINGS
 export interface AuditSecuritySettings {
   audit_log_enabled?: boolean;
   log_retention_days?: number;
-  log_events?: string[];
-  force_https?: boolean;
-  session_encryption_enabled?: boolean;
   gdpr_compliance_enabled?: boolean;
 }
 
@@ -751,16 +718,6 @@ class SystemConfigAPI {
     }
   }
 
-  async getIntegrationsSettings(): Promise<IntegrationsSettings> {
-    try {
-      const config = await this.getGroupedConfig();
-      return config.data?.grouped_settings?.integrations || {};
-    } catch (error) {
-      console.error("Error getting integrations settings:", error);
-      return {};
-    }
-  }
-
   async getAuditSecuritySettings(): Promise<AuditSecuritySettings> {
     try {
       const config = await this.getGroupedConfig();
@@ -865,12 +822,6 @@ class SystemConfigAPI {
     settings: Partial<DataReportsSettings>,
   ): Promise<SystemConfigResponse> {
     return this.updateCategorySettings("data_reports", settings);
-  }
-
-  async updateIntegrationsSettings(
-    settings: Partial<IntegrationsSettings>,
-  ): Promise<SystemConfigResponse> {
-    return this.updateCategorySettings("integrations", settings);
   }
 
   async updateAuditSecuritySettings(

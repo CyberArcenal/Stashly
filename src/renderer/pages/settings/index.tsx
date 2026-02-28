@@ -7,7 +7,6 @@ import SalesSettingsTab from "./components/SalesSettingsTab";
 import CashierSettingsTab from "./components/CashierSettingsTab";
 import NotificationsSettingsTab from "./components/NotificationsSettingsTab";
 import DataReportsSettingsTab from "./components/DataReportsSettingsTab";
-import IntegrationsSettingsTab from "./components/IntegrationsSettingsTab";
 import AuditSecuritySettingsTab from "./components/AuditSecuritySettingsTab";
 import { useSettings } from "./hooks/useSettings";
 import { showSuccess } from "../../utils/notification";
@@ -28,7 +27,13 @@ const SettingsPage: React.FC = () => {
   } = useSettings();
 
   const [activeTab, setActiveTab] = useState<
-    "general" | "inventory" | "sales" | "cashier" | "notifications" | "data_reports" | "integrations" | "audit_security"
+    | "general"
+    | "inventory"
+    | "sales"
+    | "cashier"
+    | "notifications"
+    | "data_reports"
+    | "audit_security"
   >("general");
 
   useEffect(() => {
@@ -38,7 +43,7 @@ const SettingsPage: React.FC = () => {
     }
   }, [successMessage]);
 
-  if(successMessage){
+  if (successMessage) {
     showSuccess(successMessage);
   }
 
@@ -46,8 +51,8 @@ const SettingsPage: React.FC = () => {
     try {
       // Optimistically update local state
       setCategoryData(category as keyof typeof groupedConfig, data);
-      // Save only this category to backend
-      await saveCategory(category as keyof typeof groupedConfig);
+      // Save using the new data directly
+      await saveCategory(category as keyof typeof groupedConfig, data);
     } catch (err: any) {
       setError(err.message || `Failed to save ${category} settings`);
     }
@@ -84,8 +89,6 @@ const SettingsPage: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {/* <AlertBanner error={error} success={successMessage} /> */}
 
       <div className="app-container px-6 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -126,12 +129,6 @@ const SettingsPage: React.FC = () => {
               <DataReportsSettingsTab
                 settings={groupedConfig.data_reports}
                 onSave={(data) => handleSaveCategory("data_reports", data)}
-              />
-            )}
-            {activeTab === "integrations" && (
-              <IntegrationsSettingsTab
-                settings={groupedConfig.integrations}
-                onSave={(data) => handleSaveCategory("integrations", data)}
               />
             )}
             {activeTab === "audit_security" && (

@@ -35,7 +35,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Tax Rate (%)
             </label>
@@ -48,7 +48,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               max="100"
               step="0.1"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
@@ -80,7 +80,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Import Duty Rate (%)
             </label>
@@ -93,9 +93,9 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               max="100"
               step="0.1"
             />
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Excise Tax Rate (%)
             </label>
@@ -108,9 +108,9 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               max="100"
               step="0.1"
             />
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Digital Services Tax Rate (%)
             </label>
@@ -123,9 +123,9 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               max="100"
               step="0.1"
             />
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Tax Flat Amount
             </label>
@@ -137,7 +137,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               min="0"
               step="0.01"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
@@ -223,7 +223,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Enable Loyalty Points</span>
           </label>
 
-          <label className="flex items-center">
+          {/* <label className="flex items-center">
             <input
               type="checkbox"
               checked={form?.loyalty_points_earn_on_confirm || false}
@@ -231,7 +231,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               className="rounded border-[var(--border-color)] text-[var(--accent-blue)]"
             />
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Earn Points on Order Confirm</span>
-          </label>
+          </label> */}
 
           <label className="flex items-center">
             <input
@@ -253,7 +253,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
             <span className="ml-2 text-sm text-[var(--sidebar-text)]">Prices Include Tax</span>
           </label>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-[var(--sidebar-text)] mb-1">
               Tax Calculation
             </label>
@@ -265,7 +265,7 @@ const SalesSettingsTab: React.FC<SalesSettingsTabProps> = ({ settings, onSave })
               <option value="exclusive">Exclusive</option>
               <option value="inclusive">Inclusive</option>
             </select>
-          </div>
+          </div> */}
         </div>
       </div>
 

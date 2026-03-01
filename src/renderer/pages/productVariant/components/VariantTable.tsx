@@ -2,6 +2,7 @@ import React from "react";
 import { Edit, Eye, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import type { VariantWithDetails } from "../hooks/useVariants";
 import { formatCurrency } from "../../../utils/formatters";
+import VariantActionsDropdown from "./VariantActionsDropdown";
 
 interface VariantTableProps {
   variants: VariantWithDetails[];
@@ -13,6 +14,7 @@ interface VariantTableProps {
   onView: (variant: VariantWithDetails) => void;
   onEdit: (variant: VariantWithDetails) => void;
   onDelete: (variant: VariantWithDetails) => void;
+  onTax?: (variant: VariantWithDetails) => void;
 }
 
 const VariantTable: React.FC<VariantTableProps> = ({
@@ -25,6 +27,7 @@ const VariantTable: React.FC<VariantTableProps> = ({
   onView,
   onEdit,
   onDelete,
+  onTax,
 }) => {
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return null;
@@ -35,7 +38,9 @@ const VariantTable: React.FC<VariantTableProps> = ({
     );
   };
 
-  const getStatusBadge = (status: "in-stock" | "low-stock" | "out-of-stock") => {
+  const getStatusBadge = (
+    status: "in-stock" | "low-stock" | "out-of-stock",
+  ) => {
     switch (status) {
       case "in-stock":
         return "bg-[var(--accent-green-dark)] text-[var(--accent-green)]";
@@ -61,7 +66,9 @@ const VariantTable: React.FC<VariantTableProps> = ({
     }
   };
 
-  const computeStockStatus = (totalQuantity: number): "in-stock" | "low-stock" | "out-of-stock" => {
+  const computeStockStatus = (
+    totalQuantity: number,
+  ): "in-stock" | "low-stock" | "out-of-stock" => {
     if (totalQuantity === 0) return "out-of-stock";
     if (totalQuantity <= 5) return "low-stock";
     return "in-stock";
@@ -72,7 +79,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
       className="overflow-x-auto rounded-md border compact-table"
       style={{ borderColor: "var(--border-color)" }}
     >
-      <table className="min-w-full" style={{ borderColor: "var(--border-color)" }}>
+      <table
+        className="min-w-full"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <thead style={{ backgroundColor: "var(--card-secondary-bg)" }}>
           <tr>
             <th
@@ -82,10 +92,13 @@ const VariantTable: React.FC<VariantTableProps> = ({
             >
               <input
                 type="checkbox"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                checked={variants.length > 0 && selectedVariants.length === variants.length}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                checked={
+                  variants.length > 0 &&
+                  selectedVariants.length === variants.length
+                }
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
                 style={{ color: "var(--accent-blue)" }}
@@ -94,7 +107,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) => {e.stopPropagation();onSort("name")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("name");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Variant</span>
@@ -104,7 +120,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) => {e.stopPropagation();onSort("sku")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("sku");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>SKU</span>
@@ -114,7 +133,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) => {e.stopPropagation();onSort("product_name")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("product_name");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Product</span>
@@ -124,7 +146,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) => {e.stopPropagation();onSort("category_name")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("category_name");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Category</span>
@@ -134,7 +159,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) => {e.stopPropagation();onSort("total_quantity")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("total_quantity");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Quantity</span>
@@ -144,7 +172,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
             <th
               scope="col"
               className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider cursor-pointer transition-colors"
-              onClick={(e) => {e.stopPropagation();onSort("net_price")}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSort("net_price");
+              }}
             >
               <div className="flex items-center gap-xs">
                 <span>Price</span>
@@ -173,18 +204,23 @@ const VariantTable: React.FC<VariantTableProps> = ({
             return (
               <tr
                 key={variant.id}
-                onClick={(e) =>{e.stopPropagation(); onView(variant)}}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView(variant);
+                }}
                 className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
-                  selectedVariants.includes(variant.id) ? "bg-[var(--accent-blue-dark)]" : ""
+                  selectedVariants.includes(variant.id)
+                    ? "bg-[var(--accent-blue-dark)]"
+                    : ""
                 }`}
                 style={{ borderBottom: "1px solid var(--border-color)" }}
               >
                 <td className="px-2 py-2 whitespace-nowrap">
                   <input
                     type="checkbox"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
                     checked={selectedVariants.includes(variant.id)}
                     onChange={() => onToggleSelect(variant.id)}
                     className="h-3 w-3 rounded border-gray-300"
@@ -200,7 +236,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
                       >
                         {variant.name}
                       </div>
-                      <div className="text-xs" style={{ color: "var(--primary-color)" }}>
+                      <div
+                        className="text-xs"
+                        style={{ color: "var(--primary-color)" }}
+                      >
                         ID: {variant.id}
                       </div>
                     </div>
@@ -239,16 +278,19 @@ const VariantTable: React.FC<VariantTableProps> = ({
                 <td className="px-4 py-2 whitespace-nowrap">
                   <span
                     className={`inline-flex items-center px-xs py-xs rounded-full text-xs font-medium ${getStatusBadge(
-                      stockStatus
+                      stockStatus,
                     )}`}
                   >
                     {getStatusText(stockStatus)}
                   </span>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                {/* <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-xs">
                     <button
-                      onClick={(e) => {e.stopPropagation();onView(variant)}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onView(variant);
+                      }}
                       className="transition-colors p-1 rounded"
                       style={{ color: "var(--accent-blue)" }}
                       title="View"
@@ -256,7 +298,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
                       <Eye className="icon-sm" />
                     </button>
                     <button
-                      onClick={(e) => {e.stopPropagation();onEdit(variant)}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(variant);
+                      }}
                       className="transition-colors p-1 rounded"
                       style={{ color: "var(--accent-blue)" }}
                       title="Edit"
@@ -264,7 +309,10 @@ const VariantTable: React.FC<VariantTableProps> = ({
                       <Edit className="icon-sm" />
                     </button>
                     <button
-                      onClick={(e) => {e.stopPropagation();onDelete(variant)}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(variant);
+                      }}
                       className="transition-colors p-1 rounded"
                       style={{ color: "var(--accent-red)" }}
                       title="Delete"
@@ -272,6 +320,15 @@ const VariantTable: React.FC<VariantTableProps> = ({
                       <Trash2 className="icon-sm" />
                     </button>
                   </div>
+                </td> */}
+                <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                  <VariantActionsDropdown
+                    variant={variant}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onTax={onTax} // new prop
+                  />
                 </td>
               </tr>
             );

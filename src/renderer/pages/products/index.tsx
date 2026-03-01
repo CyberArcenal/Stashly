@@ -25,6 +25,8 @@ import ProductImageFormDialog from "../productImage/components/ProductImageFormD
 import useVariantForm from "../productVariant/hooks/useVariantForm";
 import VariantFormDialog from "../productVariant/components/VariantFormDialog";
 import { useProductImageForm } from "../productImage/hooks/useProductImageForm";
+import ProductTaxAssignmentDialog from "../inventory/components/ProductTaxAssignmentDialog";
+import { useProductTaxAssignment } from "../inventory/hooks/useProductTaxAssignment";
 
 const ProductsPage: React.FC = () => {
   const {
@@ -54,13 +56,16 @@ const ProductsPage: React.FC = () => {
   const imageForm = useProductImageForm(); // new hook
   const variantForm = useVariantForm(); // assuming existing
   const viewDialog = useProductView();
+  const taxAssignmentHook = useProductTaxAssignment(reload);
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
     "csv",
   );
-
+  const handleOpenTaxAssignment = (product: ProductWithDetails) => {
+    taxAssignmentHook.open(product.id);
+  };
   const handleDelete = async (product: any) => {
     const confirmed = await dialogs.confirm({
       title: "Delete Product",
@@ -186,7 +191,7 @@ const ProductsPage: React.FC = () => {
       !(await dialogs.confirm({
         title: "Publish Product",
         message: "Are you sure do you want to publish this product.",
-        icon: "warning"
+        icon: "warning",
       }))
     )
       return;
@@ -200,11 +205,11 @@ const ProductsPage: React.FC = () => {
   };
 
   const handleUnpublish = async (product: ProductWithDetails) => {
-      if (
+    if (
       !(await dialogs.confirm({
         title: "Unpublish Product",
         message: "Are you sure do you want to Unpublished this product.",
-        icon: "warning"
+        icon: "warning",
       }))
     )
       return;
@@ -218,11 +223,11 @@ const ProductsPage: React.FC = () => {
   };
 
   const handleActivate = async (product: ProductWithDetails) => {
-      if (
+    if (
       !(await dialogs.confirm({
         title: "Activate Product",
         message: "Are you sure do you want to activate this product.",
-        icon: "info"
+        icon: "info",
       }))
     )
       return;
@@ -236,11 +241,11 @@ const ProductsPage: React.FC = () => {
   };
 
   const handleDeactivate = async (product: ProductWithDetails) => {
-      if (
+    if (
       !(await dialogs.confirm({
         title: "Deactivate",
         message: "Are you sure do you want to deactivate this product.",
-        icon: "warning"
+        icon: "warning",
       }))
     )
       return;
@@ -524,6 +529,7 @@ const ProductsPage: React.FC = () => {
             onUnpublish={handleUnpublish}
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
+            onTaxSettings={handleOpenTaxAssignment}
           />
 
           {/* Empty State */}
@@ -629,6 +635,8 @@ const ProductsPage: React.FC = () => {
         onClose={variantForm.close}
         onSuccess={reload}
       />
+
+      <ProductTaxAssignmentDialog hook={taxAssignmentHook} />
     </div>
   );
 };

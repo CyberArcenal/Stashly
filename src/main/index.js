@@ -791,6 +791,7 @@ function registerIpcHandlers() {
       "./ipc/core/order/index.ipc.js",
       "./ipc/core/orderItem/index.ipc.js",
       "./ipc/core/product/index.ipc.js",
+      "./ipc/core/productTaxChange/index.ipc.js",
       "./ipc/core/productImage/index.ipc.js",
       "./ipc/core/productVariant/index.ipc.js",
       "./ipc/core/purchase/index.ipc.js",
@@ -824,6 +825,7 @@ function registerIpcHandlers() {
       "./ipc/exports/supplier/index.ipc.js",
       "./ipc/exports/warehouse/index.ipc.js",
       "./ipc/utils/handlers/fileHandler.js",
+      "./ipc/core/tax/index.ipc.js",
     ];
 
     ipcModules.forEach((modulePath) => {

@@ -7,6 +7,7 @@ const ProductVariant = new EntitySchema({
     id: { type: Number, primary: true, generated: true },
     name: { type: String, nullable: false },
     sku: { type: String, nullable: true, unique: true },
+    gross_price: { type: Number, nullable: true },
     net_price: { type: Number, nullable: true },
     cost_per_item: { type: Number, nullable: true },
     barcode: { type: String, nullable: true, unique: true },
@@ -45,6 +46,15 @@ const ProductVariant = new EntitySchema({
       target: "PurchaseItem",
       type: "one-to-many",
       inverseSide: "variant",
+    },
+    taxes: {
+      target: "Tax",
+      type: "many-to-many",
+      joinTable: {
+        name: "product_taxes",
+        joinColumn: { name: "productId", referencedColumnName: "id" },
+        inverseJoinColumn: { name: "taxId", referencedColumnName: "id" },
+      },
     },
   },
 });

@@ -53,6 +53,7 @@ const SettingsPage: React.FC = () => {
       setCategoryData(category as keyof typeof groupedConfig, data);
       // Save using the new data directly
       await saveCategory(category as keyof typeof groupedConfig, data);
+      refetch();
     } catch (err: any) {
       setError(err.message || `Failed to save ${category} settings`);
     }

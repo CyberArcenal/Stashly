@@ -26,6 +26,8 @@ const StockMovement = require("../../entities/StockMovement");
 const Supplier = require("../../entities/Supplier");
 const Warehouse = require("../../entities/Warehouse");
 const LoyaltyTransaction = require("../../entities/LoyaltyTransaction");
+const ProductTaxChange = require("../../entities/ProductTaxChange");
+const Tax = require("../../entities/Tax");
 
 const config = getDatabaseConfig();
 
@@ -49,6 +51,8 @@ const entities = [
   Supplier,
   SystemSetting,
   Warehouse,
+  ProductTaxChange,
+  Tax,
 ];
 
 const dataSourceOptions = {

@@ -19,6 +19,8 @@ import {
 } from "../../api/exports/variant";
 import Button from "../../components/UI/Button";
 import Pagination from "../../components/Shared/Pagination1";
+import VariantTaxAssignmentDialog from "../inventory/components/VariantTaxAssignmentDialog";
+import { useVariantTaxAssignment } from "../inventory/hooks/useVariantTaxAssignment";
 
 const VariantsPage: React.FC = () => {
   const {
@@ -46,6 +48,7 @@ const VariantsPage: React.FC = () => {
 
   const formDialog = useVariantForm();
   const variantView = useVariantView();
+  const taxAssignmentHook = useVariantTaxAssignment(reload);
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -232,7 +235,9 @@ const VariantsPage: React.FC = () => {
           </div>
 
           <Button
-            onClick={formDialog.openAdd}
+            onClick={() => {
+              formDialog.openAdd(null);
+            }}
             variant="success"
             size="sm"
             icon={Plus}
@@ -410,8 +415,13 @@ const VariantsPage: React.FC = () => {
             onSort={handleSort}
             sortConfig={sortConfig}
             onView={(variant) => variantView.open(variant.id)}
-            onEdit={formDialog.openEdit}
+            onEdit={(variant) => {
+              formDialog.openEdit(variant, variant.productId || null);
+            }}
             onDelete={handleDelete}
+            onTax={(variant) => {
+              taxAssignmentHook.open(variant.id);
+            }}
           />
 
           {/* Empty State - only show when there are no variants after filtering */}
@@ -487,7 +497,10 @@ const VariantsPage: React.FC = () => {
         initialData={formDialog.initialData}
         onClose={formDialog.close}
         onSuccess={reload}
+        productId={null}
       />
+
+      <VariantTaxAssignmentDialog hook={taxAssignmentHook} />
 
       <VariantViewDialog
         isOpen={variantView.isOpen}
@@ -500,7 +513,7 @@ const VariantsPage: React.FC = () => {
         onEdit={(id) => {
           const variant = allVariants.find((v) => v.id === id);
           if (variant) {
-            formDialog.openEdit(variant);
+            formDialog.openEdit(variant, variant.productId || null);
           }
         }}
         onFetchMovements={variantView.fetchMovements}

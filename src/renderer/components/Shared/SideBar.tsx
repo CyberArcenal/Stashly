@@ -39,6 +39,9 @@ import {
   TruckElectricIcon,
   BellElectric,
   BellElectricIcon,
+  Receipt,
+  Percent,
+  Logs,
 } from "lucide-react";
 import { version } from "../../../../package.json";
 
@@ -106,6 +109,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           name: "Stock Transfers",
           icon: TrendingUp,
         },
+      ],
+    },
+    {
+      path: "",
+      name: "Tax Management",
+      icon: Receipt,
+      category: "taxes",
+      children: [
+        { path: "/taxes", name: "Taxes", icon: Percent },
+        { path: "/product-tax-changes", name: "Taxes Logs", icon: Logs },
       ],
     },
 
@@ -351,6 +364,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const categories = [
     { id: "core", name: "Core Operations" },
     { id: "inventory", name: "Inventory Management" },
+    { id: "taxes", name: "Tax Management" },
     { id: "analytics", name: "Analytics & Reports" },
     { id: "customers", name: "Customers" },
     { id: "system", name: "System" },

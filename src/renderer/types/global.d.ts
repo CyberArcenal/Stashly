@@ -21,6 +21,8 @@ export interface backendAPI {
   purchase: (payload: any) => Promise<any>;
   profitLoss: (payload: any) => Promise<any>;
   productVariant: (payload: any) => Promise<any>;
+  productTaxChange: (payload: any) => Promise<any>;
+  tax: (payload: any) => Promise<any>;
   productImage: (payload: any) => Promise<any>;
   productBulk: (payload: any) => Promise<any>;
   outOfStock: (payload: any) => Promise<any>;

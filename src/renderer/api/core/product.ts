@@ -5,6 +5,7 @@ import type { Category } from "./category";
 import type { ProductImage } from "./productImage";
 import type { ProductVariant } from "./productVariant";
 import type { StockItem } from "./stockItem";
+import type { Tax } from "./tax";
 
 /**
  * Product API – naglalaman ng lahat ng tawag sa IPC para sa product operations.
@@ -29,6 +30,7 @@ export interface Product {
   name: string;
   slug: string | null;
   description: string | null;
+  gross_price: number | null;
   net_price: number | null;
   cost_per_item: number | null;
   track_quantity: boolean;
@@ -49,6 +51,7 @@ export interface Product {
   variants?: ProductVariant[];
   images?: ProductImage[];
   stockItems?: StockItem[];
+  taxes?: Tax[]; 
 }
 
 // Para sa pag-create ng product
@@ -68,6 +71,7 @@ export interface ProductCreateData {
   is_published?: boolean;           // default false
   is_active?: boolean;              // default true
   categoryId?: number | null;
+  taxIds?: number[];
 }
 
 // Para sa pag-update ng product
@@ -88,6 +92,7 @@ export interface ProductUpdateData {
   is_active?: boolean;
   is_deleted?: boolean;
   categoryId?: number | null;
+  taxIds?: number[];
 }
 
 export interface ExportResult {

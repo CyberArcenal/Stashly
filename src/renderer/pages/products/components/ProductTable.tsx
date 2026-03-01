@@ -28,6 +28,7 @@ interface ProductTableProps {
   onUnpublish?: (product: ProductWithDetails) => void;
   onActivate?: (product: ProductWithDetails) => void;
   onDeactivate?: (product: ProductWithDetails) => void;
+  onTaxSettings?: (product: ProductWithDetails) => void;
   reload: () => void;
 }
 
@@ -48,6 +49,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
   onUnpublish,
   onActivate,
   onDeactivate,
+  onTaxSettings,
 }) => {
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return null;
@@ -368,6 +370,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   onUnpublish={onUnpublish}
                   onActivate={onActivate}
                   onDeactivate={onDeactivate}
+                  onTaxSettings={onTaxSettings}
                 />
               </td>
             </tr>

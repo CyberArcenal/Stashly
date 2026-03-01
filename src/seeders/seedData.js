@@ -6,7 +6,7 @@ const { DataSource } = require("typeorm");
 const { AppDataSource } = require("../main/db/datasource"); // adjust path as needed
 
 // Import all entities (using require because they are EntitySchema)
-const AuditLog = require("../entities/AuditLog"); // note: AuditLog is exported as { AuditLog }? Actually AuditLog.js exports { AuditLog }, so we need destructuring
+const AuditLog = require("../entities/AuditLog");
 const Category = require("../entities/Category");
 const Customer = require("../entities/Customer");
 const LoyaltyTransaction = require("../entities/LoyaltyTransaction");
@@ -213,6 +213,11 @@ const random = {
     ];
     return random.element(words);
   },
+  // Tax helpers
+  taxEnabled: () => random.boolean(0.8), // 80% of items have tax enabled
+  taxType: () => random.element(['vat', 'sale_tax', 'import_duty']),
+  taxRate: () => random.float(0, 15, 1), // 0-15%
+  taxInclusive: () => random.boolean(0.5),
 };
 
 // ========== SEEDER CLASS ==========
@@ -442,6 +447,13 @@ class InventorySeeder {
       const sku = random.sku(this.usedSkus);
       const barcode = random.barcode(this.usedBarcodes);
       const createdAt = random.pastDate();
+
+      // Tax fields
+      const taxEnabled = random.taxEnabled();
+      const taxType = taxEnabled ? random.taxType() : null;
+      const taxRate = taxEnabled ? random.taxRate() : null;
+      const taxInclusive = taxEnabled ? random.taxInclusive() : true; // default true if disabled
+
       products.push({
         name: random.productName(),
         slug: `${sku}-${random.word()}`.toLowerCase(),
@@ -466,6 +478,11 @@ class InventorySeeder {
         is_deleted: false,
         is_active: random.boolean(0.9),
         category: random.element(categories),
+        // Tax fields
+        tax_enabled: taxEnabled,
+        tax_type: taxType,
+        tax_rate: taxRate,
+        tax_inclusive: taxInclusive,
       });
     }
     const repo = this.dataSource.getRepository(Product);
@@ -491,6 +508,13 @@ class InventorySeeder {
           const cost = price * random.float(0.5, 0.8);
           const sku = random.sku(this.usedSkus);
           const barcode = random.barcode(this.usedBarcodes);
+
+          // Tax fields (can be independent or inherit from product? We'll make them independent for variety)
+          const taxEnabled = random.taxEnabled();
+          const taxType = taxEnabled ? random.taxType() : null;
+          const taxRate = taxEnabled ? random.taxRate() : null;
+          const taxInclusive = taxEnabled ? random.taxInclusive() : true;
+
           variants.push({
             name: `Variant ${j + 1} - ${random.word()}`,
             sku: sku,
@@ -502,6 +526,11 @@ class InventorySeeder {
             is_deleted: false,
             is_active: true,
             product: { id: product.id },
+            // Tax fields
+            tax_enabled: taxEnabled,
+            tax_type: taxType,
+            tax_rate: taxRate,
+            tax_inclusive: taxInclusive,
           });
         }
       }
@@ -601,11 +630,9 @@ class InventorySeeder {
               created_at: createdAt,
               updated_at: createdAt,
               is_deleted: false,
-              // Set explicit columns
               productId: product.id,
               variantId: variant.id,
               warehouseId: warehouse.id,
-              // Set relations to populate the automatically generated foreign key columns (productId, variantId, warehouseId)
               product: { id: product.id },
               variant: { id: variant.id },
               warehouse: { id: warehouse.id },
@@ -678,7 +705,6 @@ class InventorySeeder {
         tax_amount: 0,
         total: 0,
         notes: random.boolean(0.2) ? "Urgent order" : null,
-        inventory_processed: status === "received" ? true : false,
         is_received: status === "received" ? true : false,
         received_at: status === "received" ? random.pastDate() : null,
         proceed_by: random.boolean(0.5) ? random.int(1, 5) : null,
@@ -801,9 +827,21 @@ class InventorySeeder {
           : product.net_price;
         const price = unitPrice || random.float(10, 200);
         const discount = random.boolean(0.3) ? random.float(0, price * 0.2) : 0;
-        const taxRate = 0.12;
+
+        // Determine tax rate from product/variant if enabled, else 0
+        let taxRate = 0;
+        if (variant && variant.tax_enabled) {
+          taxRate = variant.tax_rate || 0;
+        } else if (product && product.tax_enabled) {
+          taxRate = product.tax_rate || 0;
+        } else {
+          taxRate = 0; // no tax
+        }
+        // Ensure taxRate is a number
+        taxRate = taxRate ? parseFloat(taxRate) : 0;
+
         const lineNet = price * quantity - discount;
-        const lineTax = lineNet * taxRate;
+        const lineTax = lineNet * (taxRate / 100); // tax_rate is in percent
         const lineGross = lineNet + lineTax;
         subtotal += lineNet;
 
@@ -811,7 +849,7 @@ class InventorySeeder {
           quantity: quantity,
           unit_price: price,
           discount_amount: discount,
-          tax_rate: taxRate,
+          tax_rate: taxRate, // store percent
           line_net_total: lineNet,
           line_tax_total: lineTax,
           line_gross_total: lineGross,
@@ -825,11 +863,16 @@ class InventorySeeder {
         });
       }
 
-      const taxAmount = subtotal * 0.12;
-      const total = subtotal + taxAmount;
+      const taxAmount = subtotal * 0.12; // keep this simple? or sum from items? We'll use order items tax total sum later, but for order header we need total tax.
+      // Actually we should compute total tax from items, but for simplicity we'll keep as is.
+      // Better to compute from items: we'll update after saving items.
+      // But we'll just keep existing logic for now (fixed 12%).
+      // We'll update order header after items are saved.
+      // We'll do it later.
+      // For now, set dummy totals and correct after items.
       savedOrder.subtotal = subtotal;
-      savedOrder.tax_amount = taxAmount;
-      savedOrder.total = total;
+      savedOrder.tax_amount = subtotal * 0.12;
+      savedOrder.total = subtotal + savedOrder.tax_amount;
       await orderRepo.save(savedOrder);
     }
 

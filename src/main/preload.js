@@ -22,9 +22,12 @@ contextBridge.exposeInMainWorld("backendAPI", {
   outOfStock: (payload) => ipcRenderer.invoke("outOfStock", payload),
   lowStock: (payload) => ipcRenderer.invoke("lowStock", payload),
 
+
   // Product APIs
   category: (payload) => ipcRenderer.invoke("category", payload),
   product: (payload) => ipcRenderer.invoke("product", payload),
+  tax: (payload) => ipcRenderer.invoke('tax', payload),
+  productTaxChange: (payload) => ipcRenderer.invoke("productTaxChange", payload),
   productVariant: (payload) => ipcRenderer.invoke("productVariant", payload),
   productImage: (payload) => ipcRenderer.invoke("productImage", payload),
   productBulk: (payload) => ipcRenderer.invoke("productBulk", payload),

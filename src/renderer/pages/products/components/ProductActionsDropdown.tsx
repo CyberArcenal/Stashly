@@ -26,6 +26,7 @@ interface ProductActionsDropdownProps {
   onUnpublish?: (product: ProductWithDetails) => void;
   onActivate?: (product: ProductWithDetails) => void;
   onDeactivate?: (product: ProductWithDetails) => void;
+  onTaxSettings?: (product: ProductWithDetails) => void;
 }
 
 const ProductActionsDropdown: React.FC<ProductActionsDropdownProps> = ({
@@ -39,6 +40,7 @@ const ProductActionsDropdown: React.FC<ProductActionsDropdownProps> = ({
   onUnpublish,
   onActivate,
   onDeactivate,
+  onTaxSettings,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,16 @@ const ProductActionsDropdown: React.FC<ProductActionsDropdownProps> = ({
               <span>Edit Product</span>
             </button>
 
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAction(() => onTaxSettings?.(product));
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+            >
+              <Edit className="w-4 h-4 text-yellow-500" />
+              <span>Manage Taxes</span>
+            </button>
             {/* Publish / Unpublish */}
             {product.is_published ? (
               <button

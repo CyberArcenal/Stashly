@@ -26,6 +26,8 @@ import AuditPage from "../pages/audit";
 import ProtectedRoute from "../app/ProtectedRoute";
 import NotificationLogPage from "../pages/NotificationLog";
 import SuppliersPage from "../pages/suppliers";
+import TaxesPage from "../pages/taxes";
+import ProductTaxChangesPage from "../pages/productTaxChanges";
 
 const PlaceholderPage = ({ name }: { name: string }) => <div>{name} Page</div>;
 
@@ -73,6 +75,9 @@ function App() {
             path="/products/out-of-stock"
             element={<OutOfStockReportPage />}
           />
+
+          <Route path="/taxes" element={<TaxesPage />} />
+          <Route path="/product-tax-changes" element={<ProductTaxChangesPage />} />
 
           {/* System */}
           <Route path="/settings" element={<SettingsPage />} />

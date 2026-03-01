@@ -8,6 +8,7 @@ const Product = new EntitySchema({
     name: { type: String, nullable: false },
     slug: { type: String, nullable: true, unique: true },
     description: { type: String, nullable: true },
+    gross_price: { type: Number, nullable: true },
     net_price: { type: Number, nullable: true },
     cost_per_item: { type: Number, nullable: true },
     track_quantity: { type: Boolean, default: true, nullable: false },
@@ -19,8 +20,16 @@ const Product = new EntitySchema({
     dimensions: { type: String, nullable: true },
     is_published: { type: Boolean, default: false, nullable: false },
     published_at: { type: Date, nullable: true },
-    created_at: { type: Date, default: () => "CURRENT_TIMESTAMP", nullable: false },
-    updated_at: { type: Date, default: () => "CURRENT_TIMESTAMP", nullable: false },
+    created_at: {
+      type: Date,
+      default: () => "CURRENT_TIMESTAMP",
+      nullable: false,
+    },
+    updated_at: {
+      type: Date,
+      default: () => "CURRENT_TIMESTAMP",
+      nullable: false,
+    },
     is_deleted: { type: Boolean, default: false, nullable: false },
     is_active: { type: Boolean, default: true, nullable: false },
   },
@@ -56,6 +65,15 @@ const Product = new EntitySchema({
       target: "PurchaseItem",
       type: "one-to-many",
       inverseSide: "product",
+    },
+    taxes: {
+      target: "Tax",
+      type: "many-to-many",
+      joinTable: {
+        name: "product_taxes",
+        joinColumn: { name: "productId", referencedColumnName: "id" },
+        inverseJoinColumn: { name: "taxId", referencedColumnName: "id" },
+      },
     },
   },
 });

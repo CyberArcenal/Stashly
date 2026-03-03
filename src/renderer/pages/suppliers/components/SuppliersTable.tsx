@@ -1,9 +1,9 @@
 // src/renderer/pages/suppliers/components/SuppliersTable.tsx
-import React from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
-import type { Supplier } from '../../../api/core/supplier';
-import { formatDate } from '../../../utils/formatters';
-import SuppliersActionsDropdown from './SuppliersActionsDropdown';
+import React from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
+import type { Supplier } from "../../../api/core/supplier";
+import { formatDate } from "../../../utils/formatters";
+import SuppliersActionsDropdown from "./SuppliersActionsDropdown";
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
@@ -11,10 +11,13 @@ interface SuppliersTableProps {
   onToggleSelect: (id: number) => void;
   onToggleSelectAll: () => void;
   onSort: (key: string) => void;
-  sortConfig: { key: string; direction: 'asc' | 'desc' };
+  sortConfig: { key: string; direction: "asc" | "desc" };
   onView: (supplier: Supplier) => void;
   onEdit: (supplier: Supplier) => void;
   onDelete: (supplier: Supplier) => void;
+  onApprove?: (supplier: Supplier) => void;
+  onReject?: (supplier: Supplier) => void;
+  onToggleActive?: (supplier: Supplier) => void;
 }
 
 const SuppliersTable: React.FC<SuppliersTableProps> = ({
@@ -27,10 +30,13 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
   onView,
   onEdit,
   onDelete,
+  onApprove,
+  onReject,
+  onToggleActive
 }) => {
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? (
+    return sortConfig.direction === "asc" ? (
       <ChevronUp className="icon-sm" />
     ) : (
       <ChevronDown className="icon-sm" />
@@ -39,13 +45,18 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string }> = {
-      approved: { bg: 'bg-green-100', text: 'text-green-700' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
-      rejected: { bg: 'bg-red-100', text: 'text-red-700' },
+      approved: { bg: "bg-green-100", text: "text-green-700" },
+      pending: { bg: "bg-yellow-100", text: "text-yellow-700" },
+      rejected: { bg: "bg-red-100", text: "text-red-700" },
     };
-    const config = statusMap[status] || { bg: 'bg-gray-100', text: 'text-gray-700' };
+    const config = statusMap[status] || {
+      bg: "bg-gray-100",
+      text: "text-gray-700",
+    };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -56,7 +67,10 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
       className="overflow-x-auto rounded-md border compact-table"
       style={{ borderColor: "var(--border-color)" }}
     >
-      <table className="min-w-full" style={{ borderColor: "var(--border-color)" }}>
+      <table
+        className="min-w-full"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <thead style={{ backgroundColor: "var(--card-secondary-bg)" }}>
           <tr>
             <th
@@ -66,10 +80,13 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
             >
               <input
                 type="checkbox"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                checked={suppliers.length > 0 && selectedSuppliers.length === suppliers.length}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                checked={
+                  suppliers.length > 0 &&
+                  selectedSuppliers.length === suppliers.length
+                }
                 onChange={onToggleSelectAll}
                 className="h-3 w-3 rounded border-gray-300"
                 style={{ color: "var(--accent-blue)" }}
@@ -158,9 +175,14 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
           {suppliers.map((supplier) => (
             <tr
               key={supplier.id}
-              onClick={(e) =>{e.stopPropagation(); onView(supplier)}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(supplier);
+              }}
               className={`hover:bg-[var(--card-secondary-bg)] transition-colors ${
-                selectedSuppliers.includes(supplier.id) ? "bg-[var(--accent-blue-dark)]" : ""
+                selectedSuppliers.includes(supplier.id)
+                  ? "bg-[var(--accent-blue-dark)]"
+                  : ""
               }`}
               style={{ borderBottom: "1px solid var(--border-color)" }}
             >
@@ -176,26 +198,44 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
                   style={{ color: "var(--accent-blue)" }}
                 />
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm font-medium" style={{ color: "var(--sidebar-text)" }}>
+              <td
+                className="px-4 py-2 whitespace-nowrap text-sm font-medium"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 {supplier.name}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm" style={{ color: "var(--text-secondary)" }}>
-                {supplier.contact_person || '-'}
+              <td
+                className="px-4 py-2 whitespace-nowrap text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {supplier.contact_person || "-"}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm" style={{ color: "var(--text-secondary)" }}>
-                {supplier.email || '-'}
+              <td
+                className="px-4 py-2 whitespace-nowrap text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {supplier.email || "-"}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm" style={{ color: "var(--text-secondary)" }}>
-                {supplier.phone || '-'}
+              <td
+                className="px-4 py-2 whitespace-nowrap text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {supplier.phone || "-"}
               </td>
               <td className="px-4 py-2 whitespace-nowrap">
                 {getStatusBadge(supplier.status)}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm" style={{ color: "var(--text-secondary)" }}>
-                {supplier.is_active ? '✅' : '❌'}
+              <td
+                className="px-4 py-2 whitespace-nowrap text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {supplier.is_active ? "✅" : "❌"}
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm" style={{ color: "var(--text-secondary)" }}>
-                {formatDate(supplier.created_at, 'MMM dd, yyyy')}
+              <td
+                className="px-4 py-2 whitespace-nowrap text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {formatDate(supplier.created_at, "MMM dd, yyyy")}
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                 <SuppliersActionsDropdown
@@ -203,6 +243,9 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
                   onView={onView}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onApprove={onApprove}
+                  onReject={onReject}
+                  onToggleActive={onToggleActive}
                 />
               </td>
             </tr>

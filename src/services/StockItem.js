@@ -2,7 +2,6 @@
 
 const auditLogger = require("../utils/auditLogger");
 
-
 class StockItemService {
   constructor() {
     this.repository = null;
@@ -41,23 +40,39 @@ class StockItemService {
   }
 
   async create(data, user = "system") {
-    const { saveDb, updateDb, removeDb } = require("../utils/dbUtils/dbActions");
-    const { stock: repo, product: productRepo, variant: variantRepo, warehouse: warehouseRepo } = await this.getRepositories();
+    const {
+      saveDb,
+      updateDb,
+      removeDb,
+    } = require("../utils/dbUtils/dbActions");
+    const {
+      stock: repo,
+      product: productRepo,
+      variant: variantRepo,
+      warehouse: warehouseRepo,
+    } = await this.getRepositories();
     try {
       if (!data.productId) throw new Error("productId is required");
       if (!data.warehouseId) throw new Error("warehouseId is required");
 
-      const product = await productRepo.findOne({ where: { id: data.productId } });
-      if (!product) throw new Error(`Product with ID ${data.productId} not found`);
+      const product = await productRepo.findOne({
+        where: { id: data.productId },
+      });
+      if (!product)
+        throw new Error(`Product with ID ${data.productId} not found`);
 
       let variant = null;
       if (data.variantId) {
         variant = await variantRepo.findOne({ where: { id: data.variantId } });
-        if (!variant) throw new Error(`Variant with ID ${data.variantId} not found`);
+        if (!variant)
+          throw new Error(`Variant with ID ${data.variantId} not found`);
       }
 
-      const warehouse = await warehouseRepo.findOne({ where: { id: data.warehouseId } });
-      if (!warehouse) throw new Error(`Warehouse with ID ${data.warehouseId} not found`);
+      const warehouse = await warehouseRepo.findOne({
+        where: { id: data.warehouseId },
+      });
+      if (!warehouse)
+        throw new Error(`Warehouse with ID ${data.warehouseId} not found`);
 
       // Check uniqueness: (product, variant, warehouse)
       const existing = await repo.findOne({
@@ -67,7 +82,10 @@ class StockItemService {
           warehouse: { id: data.warehouseId },
         },
       });
-      if (existing) throw new Error("Stock item already exists for this product/variant/warehouse combination");
+      if (existing)
+        throw new Error(
+          "Stock item already exists for this product/variant/warehouse combination",
+        );
 
       const stockData = {
         ...data,
@@ -90,10 +108,22 @@ class StockItemService {
   }
 
   async update(id, data, user = "system") {
-    const { saveDb, updateDb, removeDb } = require("../utils/dbUtils/dbActions");
-    const { stock: repo, product: productRepo, variant: variantRepo, warehouse: warehouseRepo } = await this.getRepositories();
+    const {
+      saveDb,
+      updateDb,
+      removeDb,
+    } = require("../utils/dbUtils/dbActions");
+    const {
+      stock: repo,
+      product: productRepo,
+      variant: variantRepo,
+      warehouse: warehouseRepo,
+    } = await this.getRepositories();
     try {
-      const existing = await repo.findOne({ where: { id }, relations: ["product", "variant", "warehouse"] });
+      const existing = await repo.findOne({
+        where: { id },
+        relations: ["product", "variant", "warehouse"],
+      });
       if (!existing) throw new Error(`StockItem with ID ${id} not found`);
       const oldData = { ...existing };
 
@@ -104,26 +134,37 @@ class StockItemService {
 
       if (data.productId !== undefined) {
         product = await productRepo.findOne({ where: { id: data.productId } });
-        if (!product) throw new Error(`Product with ID ${data.productId} not found`);
+        if (!product)
+          throw new Error(`Product with ID ${data.productId} not found`);
         delete data.productId;
       }
       if (data.variantId !== undefined) {
         if (data.variantId === null) {
           variant = null;
         } else {
-          variant = await variantRepo.findOne({ where: { id: data.variantId } });
-          if (!variant) throw new Error(`Variant with ID ${data.variantId} not found`);
+          variant = await variantRepo.findOne({
+            where: { id: data.variantId },
+          });
+          if (!variant)
+            throw new Error(`Variant with ID ${data.variantId} not found`);
         }
         delete data.variantId;
       }
       if (data.warehouseId !== undefined) {
-        warehouse = await warehouseRepo.findOne({ where: { id: data.warehouseId } });
-        if (!warehouse) throw new Error(`Warehouse with ID ${data.warehouseId} not found`);
+        warehouse = await warehouseRepo.findOne({
+          where: { id: data.warehouseId },
+        });
+        if (!warehouse)
+          throw new Error(`Warehouse with ID ${data.warehouseId} not found`);
         delete data.warehouseId;
       }
 
       // If any of these changed, check uniqueness
-      if (product !== existing.product || variant !== existing.variant || warehouse !== existing.warehouse) {
+      if (
+        product !== existing.product ||
+        variant !== existing.variant ||
+        warehouse !== existing.warehouse
+      ) {
         const duplicate = await repo.findOne({
           where: {
             product: { id: product.id },
@@ -132,7 +173,9 @@ class StockItemService {
           },
         });
         if (duplicate && duplicate.id !== id) {
-          throw new Error("Another stock item already exists for this product/variant/warehouse combination");
+          throw new Error(
+            "Another stock item already exists for this product/variant/warehouse combination",
+          );
         }
       }
 
@@ -153,12 +196,17 @@ class StockItemService {
   }
 
   async delete(id, user = "system") {
-    const { saveDb, updateDb, removeDb } = require("../utils/dbUtils/dbActions");
+    const {
+      saveDb,
+      updateDb,
+      removeDb,
+    } = require("../utils/dbUtils/dbActions");
     const { stock: repo } = await this.getRepositories();
     try {
       const stock = await repo.findOne({ where: { id } });
       if (!stock) throw new Error(`StockItem with ID ${id} not found`);
-      if (stock.is_deleted) throw new Error(`StockItem #${id} is already deleted`);
+      if (stock.is_deleted)
+        throw new Error(`StockItem #${id} is already deleted`);
 
       const oldData = { ...stock };
       stock.is_deleted = true;
@@ -192,26 +240,43 @@ class StockItemService {
   async findAll(options = {}) {
     const { stock: repo } = await this.getRepositories();
     try {
-      const qb = repo.createQueryBuilder("stock")
+      const qb = repo
+        .createQueryBuilder("stock")
         .leftJoinAndSelect("stock.product", "product")
         .leftJoinAndSelect("stock.variant", "variant")
         .leftJoinAndSelect("stock.warehouse", "warehouse")
         .where("stock.is_deleted = :isDeleted", { isDeleted: false });
 
       if (options.productId) {
-        qb.andWhere("product.id = :productId", { productId: options.productId });
+        qb.andWhere("product.id = :productId", {
+          productId: options.productId,
+        });
       }
       if (options.variantId) {
-        qb.andWhere("variant.id = :variantId", { variantId: options.variantId });
+        qb.andWhere("variant.id = :variantId", {
+          variantId: options.variantId,
+        });
       }
       if (options.warehouseId) {
-        qb.andWhere("warehouse.id = :warehouseId", { warehouseId: options.warehouseId });
+        qb.andWhere("warehouse.id = :warehouseId", {
+          warehouseId: options.warehouseId,
+        });
       }
       if (options.minQuantity !== undefined) {
-        qb.andWhere("stock.quantity >= :minQuantity", { minQuantity: options.minQuantity });
+        qb.andWhere("stock.quantity >= :minQuantity", {
+          minQuantity: options.minQuantity,
+        });
       }
       if (options.maxQuantity !== undefined) {
-        qb.andWhere("stock.quantity <= :maxQuantity", { maxQuantity: options.maxQuantity });
+        qb.andWhere("stock.quantity <= :maxQuantity", {
+          maxQuantity: options.maxQuantity,
+        });
+      }
+
+      if (options.search) {
+        qb.andWhere(
+          "(product.name LIKE :search OR product.sku LIKE :search OR product.barcode LIKE :search OR variant.name LIKE :search OR variant.sku LIKE :search)",
+        ).setParameter("search", `%${options.search}%`);
       }
 
       const sortBy = options.sortBy || "created_at";

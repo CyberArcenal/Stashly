@@ -1,20 +1,23 @@
 // src/renderer/pages/suppliers/index.tsx
-import React, { useState } from 'react';
-import { Plus, Download, Filter, RefreshCw, Building2 } from 'lucide-react';
-import Button from '../../components/UI/Button';
-import Pagination from '../../components/Shared/Pagination1';
-import { dialogs } from '../../utils/dialogs';
-import { showSuccess, showError, showInfo } from '../../utils/notification';
+import React, { useState } from "react";
+import { Plus, Download, Filter, RefreshCw, Building2 } from "lucide-react";
+import Button from "../../components/UI/Button";
+import Pagination from "../../components/Shared/Pagination1";
+import { dialogs } from "../../utils/dialogs";
+import { showSuccess, showError, showInfo } from "../../utils/notification";
 
-import supplierAPI from '../../api/core/supplier';
-import { useSuppliers } from './hooks/useSuppliers';
-import { useSupplierForm } from './hooks/useSupplierForm';
-import { useSupplierView } from './hooks/useSupplierView';
-import FilterBar from './components/FilterBar';
-import SuppliersTable from './components/SuppliersTable';
-import SupplierFormDialog from './components/SupplierFormDialog';
-import SupplierViewDialog from './components/SupplierViewDialog';
-import { supplierExportAPI, type SupplierExportParams } from '../../api/exports/supplier';
+import supplierAPI, { type Supplier } from "../../api/core/supplier";
+import { useSuppliers } from "./hooks/useSuppliers";
+import { useSupplierForm } from "./hooks/useSupplierForm";
+import { useSupplierView } from "./hooks/useSupplierView";
+import FilterBar from "./components/FilterBar";
+import SuppliersTable from "./components/SuppliersTable";
+import SupplierFormDialog from "./components/SupplierFormDialog";
+import SupplierViewDialog from "./components/SupplierViewDialog";
+import {
+  supplierExportAPI,
+  type SupplierExportParams,
+} from "../../api/exports/supplier";
 
 const SuppliersPage: React.FC = () => {
   const {
@@ -44,27 +47,76 @@ const SuppliersPage: React.FC = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'csv' | 'excel' | 'pdf'>('csv');
+  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "pdf">(
+    "csv",
+  );
+  // src/renderer/pages/suppliers/index.tsx
 
+  // Add handlers after handleDelete
+  const handleApprove = async (supplier: Supplier) => {
+    const confirmed = await dialogs.confirm({
+      title: "Approve Supplier",
+      message: `Are you sure you want to approve "${supplier.name}"?`,
+    });
+    if (!confirmed) return;
+    try {
+      await supplierAPI.update(supplier.id, { status: "approved" });
+      showSuccess("Supplier approved.");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleReject = async (supplier: Supplier) => {
+    const confirmed = await dialogs.confirm({
+      title: "Reject Supplier",
+      message: `Are you sure you want to reject "${supplier.name}"?`,
+    });
+    if (!confirmed) return;
+    try {
+      await supplierAPI.update(supplier.id, { status: "rejected" });
+      showSuccess("Supplier rejected.");
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
+
+  const handleToggleActive = async (supplier: Supplier) => {
+    const newState = !supplier.is_active;
+    const confirmed = await dialogs.confirm({
+      title: newState ? "Activate Supplier" : "Deactivate Supplier",
+      message: `Are you sure you want to ${newState ? "activate" : "deactivate"} "${supplier.name}"?`,
+    });
+    if (!confirmed) return;
+    try {
+      await supplierAPI.update(supplier.id, { is_active: newState });
+      showSuccess(`Supplier ${newState ? "activated" : "deactivated"}.`);
+      reload();
+    } catch (err: any) {
+      showError(err.message);
+    }
+  };
   const handleDelete = async (supplier: any) => {
     const confirmed = await dialogs.confirm({
-      title: 'Delete Supplier',
+      title: "Delete Supplier",
       message: `Are you sure you want to delete supplier "${supplier.name}"?`,
     });
     if (!confirmed) return;
     try {
       await supplierAPI.delete(supplier.id);
-      showInfo('Supplier deleted successfully.');
+      showInfo("Supplier deleted successfully.");
       reload();
     } catch (err: any) {
-      dialogs.alert({ title: 'Error', message: err.message });
+      dialogs.alert({ title: "Error", message: err.message });
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedSuppliers.length === 0) return;
     const confirmed = await dialogs.confirm({
-      title: 'Bulk Delete',
+      title: "Bulk Delete",
       message: `Delete ${selectedSuppliers.length} suppliers?`,
     });
     if (!confirmed) return;
@@ -81,7 +133,7 @@ const SuppliersPage: React.FC = () => {
   const handleExport = async () => {
     if (allSuppliers.length === 0) return;
     const confirmed = await dialogs.confirm({
-      title: 'Export Suppliers',
+      title: "Export Suppliers",
       message: `Export ${pagination.total} suppliers as ${exportFormat.toUpperCase()}?`,
     });
     if (!confirmed) return;
@@ -89,9 +141,14 @@ const SuppliersPage: React.FC = () => {
     try {
       const exportParams: SupplierExportParams = {
         format: exportFormat,
-        status: filters.status === 'all' ? undefined : filters.status,
+        status: filters.status === "all" ? undefined : filters.status,
         search: filters.search || undefined,
-        is_active: filters.is_active === 'active' ? true : filters.is_active === 'inactive' ? false : undefined,
+        is_active:
+          filters.is_active === "active"
+            ? true
+            : filters.is_active === "inactive"
+              ? false
+              : undefined,
         start_date: filters.startDate || undefined,
         end_date: filters.endDate || undefined,
       };
@@ -112,10 +169,16 @@ const SuppliersPage: React.FC = () => {
   const { start, end } = getDisplayRange();
 
   // Summary stats
-  const approvedCount = allSuppliers.filter(s => s.status === 'approved').length;
-  const pendingCount = allSuppliers.filter(s => s.status === 'pending').length;
-  const rejectedCount = allSuppliers.filter(s => s.status === 'rejected').length;
-  const activeCount = allSuppliers.filter(s => s.is_active).length;
+  const approvedCount = allSuppliers.filter(
+    (s) => s.status === "approved",
+  ).length;
+  const pendingCount = allSuppliers.filter(
+    (s) => s.status === "pending",
+  ).length;
+  const rejectedCount = allSuppliers.filter(
+    (s) => s.status === "rejected",
+  ).length;
+  const activeCount = allSuppliers.filter((s) => s.is_active).length;
 
   return (
     <div
@@ -128,10 +191,16 @@ const SuppliersPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--sidebar-text)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--sidebar-text)" }}
+          >
             Suppliers
           </h2>
-          <p className="mt-xs text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="mt-xs text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Manage and track all supplier information
           </p>
         </div>
@@ -145,15 +214,17 @@ const SuppliersPage: React.FC = () => {
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter className="icon-sm mr-xs" />
-            Filters {showFilters ? '↑' : '↓'}
+            Filters {showFilters ? "↑" : "↓"}
           </button>
           <button
             onClick={reload}
             disabled={loading}
             className="btn btn-secondary btn-sm rounded-md flex items-center transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-md disabled:opacity-50"
           >
-            <RefreshCw className={`icon-sm mr-1 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw
+              className={`icon-sm mr-1 ${loading ? "animate-spin" : ""}`}
+            />
+            {loading ? "Refreshing..." : "Refresh"}
           </button>
 
           {/* Export */}
@@ -165,7 +236,10 @@ const SuppliersPage: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-1">
-              <label className="text-xs" style={{ color: "var(--sidebar-text)" }}>
+              <label
+                className="text-xs"
+                style={{ color: "var(--sidebar-text)" }}
+              >
                 Export:
               </label>
               <select
@@ -185,7 +259,7 @@ const SuppliersPage: React.FC = () => {
               className="compact-button rounded-md flex items-center gap-1 px-2 py-1 text-xs"
             >
               <Download className="icon-xs" />
-              {exportLoading ? '...' : 'Export'}
+              {exportLoading ? "..." : "Export"}
             </Button>
           </div>
 
@@ -252,7 +326,10 @@ const SuppliersPage: React.FC = () => {
             borderColor: "var(--accent-blue)",
           }}
         >
-          <span className="font-medium text-sm" style={{ color: "var(--accent-green)" }}>
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--accent-green)" }}
+          >
             {selectedSuppliers.length} supplier(s) selected
           </span>
           <div className="flex gap-xs">
@@ -299,7 +376,7 @@ const SuppliersPage: React.FC = () => {
               Showing {start} to {end} of {pagination.total} entries
             </>
           ) : (
-            'No entries found'
+            "No entries found"
           )}
         </div>
       </div>
@@ -315,7 +392,9 @@ const SuppliersPage: React.FC = () => {
       )}
 
       {/* Error */}
-      {error && <div className="text-center py-4 text-red-500">Error: {error}</div>}
+      {error && (
+        <div className="text-center py-4 text-red-500">Error: {error}</div>
+      )}
 
       {/* Table */}
       {!loading && !error && (
@@ -330,6 +409,9 @@ const SuppliersPage: React.FC = () => {
             onView={(sup) => viewDialog.open(sup.id)}
             onEdit={formDialog.openEdit}
             onDelete={handleDelete}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onToggleActive={handleToggleActive}
           />
 
           {/* Empty State */}
@@ -338,20 +420,29 @@ const SuppliersPage: React.FC = () => {
               className="text-center py-8 border rounded-md"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <Building2 className="icon-xl mx-auto mb-2" style={{ color: "var(--text-secondary)" }} />
+              <Building2
+                className="icon-xl mx-auto mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              />
               <p className="text-base" style={{ color: "var(--sidebar-text)" }}>
                 No suppliers found.
               </p>
-              <p className="mt-xs text-sm" style={{ color: "var(--text-tertiary)" }}>
-                {Object.values(filters).some((v) => v && v !== 'all')
-                  ? 'Try adjusting your search or filters'
-                  : 'Start by adding your first supplier'}
+              <p
+                className="mt-xs text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                {Object.values(filters).some((v) => v && v !== "all")
+                  ? "Try adjusting your search or filters"
+                  : "Start by adding your first supplier"}
               </p>
               <div className="mt-2 gap-xs flex justify-center">
-                {Object.values(filters).some((v) => v && v !== 'all') && (
+                {Object.values(filters).some((v) => v && v !== "all") && (
                   <button
                     className="compact-button rounded-md"
-                    style={{ backgroundColor: "var(--accent-blue)", color: "white" }}
+                    style={{
+                      backgroundColor: "var(--accent-blue)",
+                      color: "white",
+                    }}
                     onClick={resetFilters}
                   >
                     Clear Filters
@@ -359,7 +450,10 @@ const SuppliersPage: React.FC = () => {
                 )}
                 <button
                   className="compact-button rounded-md"
-                  style={{ backgroundColor: "var(--accent-green)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--accent-green)",
+                    color: "white",
+                  }}
                   onClick={formDialog.openAdd}
                 >
                   Add First Supplier
@@ -400,6 +494,7 @@ const SuppliersPage: React.FC = () => {
         loading={viewDialog.loading}
         isOpen={viewDialog.isOpen}
         onClose={viewDialog.close}
+        purchases={viewDialog.purchases}
       />
     </div>
   );

@@ -36,8 +36,18 @@ import {
 import type { DashboardData } from "../../api/analytics/dashboard";
 import dashboardAPI from "../../api/analytics/dashboard";
 import { formatCurrency, formatPercentage } from "../../utils/formatters";
+import SalesFormDialog from "../orders/components/OrderFormDialog";
+import { useOrderView } from "../orders/hooks/useOrderView";
+import useSalesForm from "../orders/hooks/useOrderForm";
 
 const DashboardPage: React.FC = () => {
+
+
+
+   
+
+
+  
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
     null,
   );
@@ -81,10 +91,10 @@ const DashboardPage: React.FC = () => {
   // Quick actions for the dashboard
   const quickActions = [
     { label: "Products", path: "/products", icon: Package, color: "blue" },
-    { label: "New Order", path: "/orders/form", icon: Plus, color: "green" },
+    { label: "New Order", path: "/orders", icon: Plus, color: "green" },
     {
       label: "Purchase",
-      path: "/purchases/form",
+      path: "/purchases",
       icon: Truck,
       color: "orange",
     },
@@ -110,6 +120,10 @@ const DashboardPage: React.FC = () => {
   const navigateToSuppliers = () => navigate("/suppliers");
   const navigateToAuditLogs = () => navigate("/audit-logs");
   const navigateToInventoryReport = () => navigate("/reports/inventory");
+
+
+   const formDialog = useSalesForm();
+  const viewDialog = useOrderView();
 
   if (loading) {
     return (
@@ -1880,6 +1894,16 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+
+            <SalesFormDialog
+              isOpen={formDialog.isOpen}
+              mode={formDialog.mode}
+              orderId={formDialog.orderId}
+              initialData={formDialog.initialData}
+              onClose={formDialog.close}
+              onSuccess={fetchDashboardData}
+            />
     </div>
   );
 };

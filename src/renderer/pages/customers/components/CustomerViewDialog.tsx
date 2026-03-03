@@ -1,5 +1,5 @@
 // src/renderer/pages/customers/components/CustomerViewDialog.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
 import {
@@ -11,58 +11,40 @@ import {
   ShoppingCart,
   FileText,
   Edit,
-  X,
 } from "lucide-react";
-import type { Customer } from "../../../api/core/customer";
-import type { Order } from "../../../api/core/order";
-import type { LoyaltyTransaction } from "../../../api/core/loyalty";
-import {
-  formatDate,
-  formatCurrency,
-  formatCompactNumber,
-} from "../../../utils/formatters";
+import { formatDate, formatCurrency, formatCompactNumber } from "../../../utils/formatters";
+import { useCustomerView } from "../hooks/useCustomerView";
 
 interface CustomerViewDialogProps {
-  isOpen: boolean;
-  customer: Customer | null;
-  orders: Order[];
-  loyaltyTransactions: LoyaltyTransaction[];
-  loading: boolean;
-  loadingOrders?: boolean;
-  loadingLoyalty?: boolean;
-  onClose: () => void;
-  onEdit?: (id: number) => void;
-  onFetchOrders?: () => void;
-  onFetchLoyalty?: () => void;
+  hook: ReturnType<typeof useCustomerView>;
 }
 
-const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
-  isOpen,
-  customer,
-  orders,
-  loyaltyTransactions,
-  loading,
-  loadingOrders = false,
-  loadingLoyalty = false,
-  onClose,
-  onEdit,
-  onFetchOrders,
-  onFetchLoyalty,
-}) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "loyalty">(
-    "overview",
-  );
+const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({ hook }) => {
+  const {
+    isOpen,
+    loading,
+    customer,
+    orders,
+    loyaltyTransactions,
+    loadingOrders,
+    loadingLoyalty,
+    fetchOrders,
+    fetchLoyalty,
+    close,
+  } = hook;
 
+  const [activeTab, setActiveTab] = React.useState<"overview" | "orders" | "loyalty">("overview");
+
+  // Trigger fetches when tab changes
   useEffect(() => {
-    if (activeTab === "orders" && onFetchOrders) {
-      onFetchOrders();
+    if (activeTab === "orders") {
+      fetchOrders();
+    } else if (activeTab === "loyalty") {
+      fetchLoyalty();
     }
-    if (activeTab === "loyalty" && onFetchLoyalty) {
-      onFetchLoyalty();
-    }
-  }, [activeTab, onFetchOrders, onFetchLoyalty]);
+  }, [activeTab, fetchOrders, fetchLoyalty]);
 
-  if (!customer && !loading) return null;
+  if (!isOpen) return null;
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string }> = {
@@ -70,14 +52,9 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
       vip: { bg: "bg-yellow-100", text: "text-yellow-700" },
       elite: { bg: "bg-purple-100", text: "text-purple-700" },
     };
-    const config = statusMap[status] || {
-      bg: "bg-gray-100",
-      text: "text-gray-700",
-    };
+    const config = statusMap[status] || { bg: "bg-gray-100", text: "text-gray-700" };
     return (
-      <span
-        className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
-      >
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -97,7 +74,7 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Customer Details" size="xl">
+    <Modal isOpen={isOpen} onClose={close} title="Customer Details" size="xl">
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)]"></div>
@@ -111,9 +88,7 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                 <User className="w-6 h-6 text-[var(--text-tertiary)]" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-[var(--sidebar-text)]">
-                  {customer.name}
-                </h3>
+                <h3 className="text-lg font-semibold text-[var(--sidebar-text)]">{customer.name}</h3>
                 <p className="text-sm text-[var(--text-secondary)]">
                   ID: {customer.id} • Joined {formatDate(customer.createdAt)}
                 </p>
@@ -121,16 +96,7 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
             </div>
             <div className="flex gap-2">
               <div>{getStatusBadge(customer.status)}</div>
-
-              {onEdit && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onEdit(customer.id)}
-                >
-                  <Edit className="w-4 h-4 mr-1" /> Edit
-                </Button>
-              )}
+              {/* Edit button could be added here */}
             </div>
           </div>
 
@@ -150,12 +116,12 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   {tab === "orders" && orders?.length > 0 && (
                     <span className="ml-2 text-xs bg-[var(--accent-blue)] text-white rounded-full px-1.5 py-0.5">
-                      {orders?.length}
+                      {orders.length}
                     </span>
                   )}
                   {tab === "loyalty" && loyaltyTransactions?.length > 0 && (
                     <span className="ml-2 text-xs bg-[var(--accent-blue)] text-white rounded-full px-1.5 py-0.5">
-                      {loyaltyTransactions?.length}
+                      {loyaltyTransactions.length}
                     </span>
                   )}
                 </button>
@@ -176,30 +142,18 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-[var(--text-secondary)]" />
-                        <span className="text-[var(--text-secondary)]">
-                          Email:
-                        </span>
-                        <span className="font-medium text-[var(--sidebar-text)]">
-                          {customer.email || "-"}
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Email:</span>
+                        <span className="font-medium text-[var(--sidebar-text)]">{customer.email || "-"}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-[var(--text-secondary)]" />
-                        <span className="text-[var(--text-secondary)]">
-                          Phone:
-                        </span>
-                        <span className="font-medium text-[var(--sidebar-text)]">
-                          {customer.phone || "-"}
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Phone:</span>
+                        <span className="font-medium text-[var(--sidebar-text)]">{customer.phone || "-"}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-[var(--text-secondary)]" />
-                        <span className="text-[var(--text-secondary)]">
-                          Contact Info:
-                        </span>
-                        <span className="font-medium text-[var(--sidebar-text)]">
-                          {customer.contactInfo || "-"}
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Contact Info:</span>
+                        <span className="font-medium text-[var(--sidebar-text)]">{customer.contactInfo || "-"}</span>
                       </div>
                     </div>
                   </div>
@@ -210,21 +164,13 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                     </h4>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-[var(--text-secondary)]">
-                          Joined:
-                        </span>
-                        <span className="font-medium text-[var(--sidebar-text)]">
-                          {formatDate(customer.createdAt)}
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Joined:</span>
+                        <span className="font-medium text-[var(--sidebar-text)]">{formatDate(customer.createdAt)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--text-secondary)]">
-                          Last Updated:
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Last Updated:</span>
                         <span className="font-medium text-[var(--sidebar-text)]">
-                          {customer.updatedAt
-                            ? formatDate(customer.updatedAt)
-                            : "-"}
+                          {customer.updatedAt ? formatDate(customer.updatedAt) : "-"}
                         </span>
                       </div>
                     </div>
@@ -239,21 +185,15 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                     </h4>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span className="text-[var(--text-secondary)]">
-                          Current Balance:
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Current Balance:</span>
                         <div className="font-medium text-[var(--sidebar-text)]">
-                          {formatCompactNumber(customer.loyaltyPointsBalance)}{" "}
-                          pts
+                          {formatCompactNumber(customer.loyaltyPointsBalance)} pts
                         </div>
                       </div>
                       <div>
-                        <span className="text-[var(--text-secondary)]">
-                          Lifetime Earned:
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Lifetime Earned:</span>
                         <div className="font-medium text-[var(--sidebar-text)]">
-                          {formatCompactNumber(customer.lifetimePointsEarned)}{" "}
-                          pts
+                          {formatCompactNumber(customer.lifetimePointsEarned)} pts
                         </div>
                       </div>
                     </div>
@@ -266,22 +206,14 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                     </h4>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-[var(--text-secondary)]">
-                          Total Orders:
-                        </span>
-                        <span className="font-medium text-[var(--sidebar-text)]">
-                          {orders?.length}
-                        </span>
+                        <span className="text-[var(--text-secondary)]">Total Orders:</span>
+                        <span className="font-medium text-[var(--sidebar-text)]">{orders?.length}</span>
                       </div>
                       {orders?.length > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-[var(--text-secondary)]">
-                            Total Spent:
-                          </span>
+                          <span className="text-[var(--text-secondary)]">Total Spent:</span>
                           <span className="font-medium text-[var(--sidebar-text)]">
-                            {formatCurrency(
-                              orders?.reduce((sum, o) => sum + o.total, 0),
-                            )}
+                            {formatCurrency(orders.reduce((sum, o) => sum + o.total, 0))}
                           </span>
                         </div>
                       )}
@@ -293,17 +225,13 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
 
             {activeTab === "orders" && (
               <div>
-                <h4 className="font-medium mb-2 text-[var(--sidebar-text)]">
-                  Order History
-                </h4>
+                <h4 className="font-medium mb-2 text-[var(--sidebar-text)]">Order History</h4>
                 {loadingOrders ? (
                   <div className="flex justify-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-blue)]"></div>
                   </div>
                 ) : orders?.length === 0 ? (
-                  <p className="text-center py-4 text-[var(--text-secondary)]">
-                    No orders found.
-                  </p>
+                  <p className="text-center py-4 text-[var(--text-secondary)]">No orders found.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-[var(--border-color)]">
@@ -326,20 +254,16 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                       <tbody className="bg-[var(--card-bg)] divide-y divide-[var(--border-color)]">
                         {orders?.map((order) => (
                           <tr key={order.id}>
-                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">
-                              {order.order_number}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">
-                              {formatDate(order.created_at)}
-                            </td>
+                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">{order.order_number}</td>
+                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">{formatDate(order.created_at)}</td>
                             <td className="px-4 py-2 text-sm">
                               <span
                                 className={`px-2 py-0.5 rounded-full text-xs ${
                                   order.status === "completed"
                                     ? "bg-green-100 text-green-700"
                                     : order.status === "cancelled"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-yellow-100 text-yellow-700"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
                                 }`}
                               >
                                 {order.status}
@@ -359,17 +283,13 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
 
             {activeTab === "loyalty" && (
               <div>
-                <h4 className="font-medium mb-2 text-[var(--sidebar-text)]">
-                  Loyalty Transactions
-                </h4>
+                <h4 className="font-medium mb-2 text-[var(--sidebar-text)]">Loyalty Transactions</h4>
                 {loadingLoyalty ? (
                   <div className="flex justify-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-blue)]"></div>
                   </div>
                 ) : loyaltyTransactions?.length === 0 ? (
-                  <p className="text-center py-4 text-[var(--text-secondary)]">
-                    No loyalty transactions found.
-                  </p>
+                  <p className="text-center py-4 text-[var(--text-secondary)]">No loyalty transactions found.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-[var(--border-color)]">
@@ -396,33 +316,21 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
                         {loyaltyTransactions?.map((tx) => (
                           <tr key={tx.id}>
                             <td className="px-4 py-2 text-sm">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs ${getLoyaltyTypeColor(tx.transactionType)}`}
-                              >
+                              <span className={`px-2 py-0.5 rounded-full text-xs ${getLoyaltyTypeColor(tx.transactionType)}`}>
                                 {tx.transactionType}
                               </span>
                             </td>
                             <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">
-                              <span
-                                className={
-                                  tx.transactionType === "earn"
-                                    ? "text-green-600"
-                                    : "text-red-600"
-                                }
-                              >
+                              <span className={tx.transactionType === "earn" ? "text-green-600" : "text-red-600"}>
                                 {tx.transactionType === "earn" ? "+" : "-"}
                                 {Math.abs(tx.pointsChange)}
                               </span>
                             </td>
-                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">
-                              {formatDate(tx.timestamp)}
-                            </td>
+                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">{formatDate(tx.timestamp)}</td>
                             <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">
                               {tx.order?.order_number || "-"}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">
-                              {tx.notes || "-"}
-                            </td>
+                            <td className="px-4 py-2 text-sm text-[var(--sidebar-text)]">{tx.notes || "-"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -434,9 +342,7 @@ const CustomerViewDialog: React.FC<CustomerViewDialogProps> = ({
           </div>
         </div>
       ) : (
-        <p className="text-center py-4 text-[var(--text-secondary)]">
-          Customer not found.
-        </p>
+        <p className="text-center py-4 text-[var(--text-secondary)]">Customer not found.</p>
       )}
     </Modal>
   );

@@ -35,12 +35,13 @@ class ProductVariantService {
   }
 
   async create(data, user = "system") {
-    const { saveDb } = require("../utils/dbUtils/dbActions");
+    const { saveDb, updateDb } = require("../utils/dbUtils/dbActions");
     const {
       variant: repo,
       product: productRepo,
       tax: taxRepo,
     } = await this.getRepositories();
+
     try {
       if (!data.productId) throw new Error("productId is required");
       if (!data.name) throw new Error("Variant name is required");
@@ -71,7 +72,6 @@ class ProductVariantService {
       // --- Handle taxes ---
       let taxes = [];
       if (data.taxIds !== undefined) {
-        // Use provided tax IDs
         const taxIds = (data.taxIds || []).map((id) => Number(id));
         if (taxIds.length > 0) {
           taxes = await taxRepo.findByIds(taxIds);
@@ -89,13 +89,32 @@ class ProductVariantService {
         });
       }
 
-      const variantData = { ...data, product, taxes };
+      // Step 1: Create variant without taxes
+      const variantData = { ...data, product };
       delete variantData.productId;
-
       const variant = repo.create(variantData);
-      const saved = await saveDb(repo, variant);
-      await auditLogger.logCreate("ProductVariant", saved.id, saved, user);
-      return saved;
+      const saved = await saveDb(repo, variant); // triggers beforeInsert/afterInsert
+
+      // Step 2: Add taxes and update
+      if (taxes.length > 0) {
+        saved.taxes = taxes;
+        // Use updateDb to trigger beforeUpdate/afterUpdate (subscriber will recalculate)
+        await updateDb(repo, saved);
+      }
+
+      // Reload to get full relations for response
+      const savedWithTaxes = await repo.findOne({
+        where: { id: saved.id },
+        relations: ["taxes", "product"],
+      });
+
+      await auditLogger.logCreate(
+        "ProductVariant",
+        saved.id,
+        savedWithTaxes,
+        user,
+      );
+      return savedWithTaxes;
     } catch (error) {
       console.error("Failed to create product variant:", error.message);
       throw error;

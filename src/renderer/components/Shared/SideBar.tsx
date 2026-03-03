@@ -176,7 +176,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           icon: BellElectricIcon,
         },
         { path: "/settings", name: "Settings", icon: Settings },
-        { name: "Activation", icon: Key, path: "/activation" },
+        // { name: "Activation", icon: Key, path: "/activation" },
       ],
     },
   ];

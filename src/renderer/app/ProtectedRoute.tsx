@@ -8,26 +8,26 @@ import { systemCache } from "../utils/cacheUtils";
 
 const ProtectedRoute: React.FC = () => {
   const [isActivationRequired, setIsActivationRequired] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
-  useEffect(() => {
-    const checkActivation = async () => {
-      try {
-        const response = await activationAPI.requiresActivation();
-        if (response.data.requiresActivation && !response.data.canContinue) {
-          setIsActivationRequired(true);
-          setShowDialog(true);
-        }
-      } catch (error) {
-        console.error("Failed to check activation:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const checkActivation = async () => {
+  //     try {
+  //       const response = await activationAPI.requiresActivation();
+  //       if (response.data.requiresActivation && !response.data.canContinue) {
+  //         setIsActivationRequired(true);
+  //         setShowDialog(true);
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to check activation:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    checkActivation();
-  }, []);
+  //   checkActivation();
+  // }, []);
 
   const { currency } = useGeneralSettings();
 

@@ -49,10 +49,7 @@ class ProductService {
    */
 
   async create(data, user = "system") {
-    const {
-      saveDb,
-      // ... other destructured actions
-    } = require("../utils/dbUtils/dbActions");
+    const { saveDb, updateDb } = require("../utils/dbUtils/dbActions");
     const {
       product: repo,
       category: categoryRepo,
@@ -91,7 +88,6 @@ class ProductService {
       // --- Handle taxes ---
       let taxes = [];
       if (data.taxIds !== undefined) {
-        // Use provided tax IDs
         const taxIds = (data.taxIds || []).map((id) => Number(id));
         if (taxIds.length > 0) {
           taxes = await taxRepo.findByIds(taxIds);
@@ -103,17 +99,31 @@ class ProductService {
         }
         delete data.taxIds;
       } else {
-        // No taxIds provided → use default taxes
         taxes = await taxRepo.find({
           where: { is_default: true, is_deleted: false, is_enabled: true },
         });
       }
 
-      const productData = { ...data, category, taxes };
+      // Step 1: Create product without taxes
+      const productData = { ...data, category };
       const product = repo.create(productData);
-      const saved = await saveDb(repo, product);
-      await auditLogger.logCreate("Product", saved.id, saved, user);
-      return saved;
+      const saved = await saveDb(repo, product); // triggers beforeInsert/afterInsert
+
+      // Step 2: Add taxes and update
+      if (taxes.length > 0) {
+        saved.taxes = taxes;
+        // Use updateDb to trigger beforeUpdate/afterUpdate (subscriber will recalculate)
+        await updateDb(repo, saved);
+      }
+
+      // Reload to get full relations for response
+      const savedWithTaxes = await repo.findOne({
+        where: { id: saved.id },
+        relations: ["taxes", "category"],
+      });
+
+      await auditLogger.logCreate("Product", saved.id, savedWithTaxes, user);
+      return savedWithTaxes;
     } catch (error) {
       console.error("Failed to create product:", error.message);
       throw error;

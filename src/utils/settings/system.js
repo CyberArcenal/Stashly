@@ -190,7 +190,7 @@ async function companyName() {
     SettingType.GENERAL,
 
     // @ts-ignore
-    "POS Management",
+    "Stashify App",
   );
 }
 

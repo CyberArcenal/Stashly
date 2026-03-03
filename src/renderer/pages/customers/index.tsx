@@ -434,24 +434,7 @@ const CustomersPage: React.FC = () => {
         onSuccess={reload}
       />
 
-      <CustomerViewDialog
-        isOpen={viewDialog.isOpen}
-        customer={viewDialog.customer}
-        orders={viewDialog.orders}
-        loyaltyTransactions={viewDialog.loyaltyTransactions}
-        loading={viewDialog.loading}
-        loadingOrders={viewDialog.loadingOrders}
-        loadingLoyalty={viewDialog.loadingLoyalty}
-        onClose={viewDialog.close}
-        onEdit={(id) => {
-          const customer = customers.find((c) => c.id === id);
-          if (customer) {
-            formDialog.openEdit(customer);
-          }
-        }}
-        onFetchOrders={viewDialog.fetchOrders}
-        onFetchLoyalty={viewDialog.fetchLoyalty}
-      />
+    <CustomerViewDialog hook={viewDialog} />
     </div>
   );
 };

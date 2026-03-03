@@ -104,6 +104,7 @@ module.exports = async (params) => {
       sortOrder: params.sortOrder === "ASC" ? "ASC" : "DESC",
       page: params.page,
       limit: params.limit,
+      search: params.search,
     };
 
     // Remove undefined values

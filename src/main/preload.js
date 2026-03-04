@@ -105,6 +105,27 @@ contextBridge.exposeInMainWorld("backendAPI", {
   // Activation
   activation: (payload) => ipcRenderer.invoke("activation", payload),
 
+  // 🪟 Window Events
+  windowControl: (payload) => ipcRenderer.invoke("window-control", payload),
+
+  onWindowMaximized: (callback) =>
+    ipcRenderer.on("window:maximized", () => callback()),
+
+  onWindowRestored: (callback) =>
+    ipcRenderer.on("window:restored", () => callback()),
+
+  onWindowMinimized: (callback) =>
+    ipcRenderer.on("window:minimized", () => callback()),
+
+  onWindowClosed: (callback) =>
+    ipcRenderer.on("window:closed", () => callback()),
+
+  onWindowResized: (callback) =>
+    ipcRenderer.on("window:resized", (event, bounds) => callback(bounds)),
+
+  onWindowMoved: (callback) =>
+    ipcRenderer.on("window:moved", (event, position) => callback(position)),
+
   updater: (payload) => ipcRenderer.invoke("updater", payload),
   on: (event, callback) => {
     ipcRenderer.on(event, callback);

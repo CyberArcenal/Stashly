@@ -66,7 +66,7 @@ export function toTitleCase(str: string) {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const location = useLocation();
   const title = toTitleCase(name);
-  const {currency} = useGeneralSettings();
+  const { currency } = useGeneralSettings();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(
     {},
   );

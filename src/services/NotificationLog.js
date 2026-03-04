@@ -1,9 +1,9 @@
 // src/services/notificationLog.service.js
 // @ts-check
-const { AppDataSource } = require("../main/db/datasource");
 const NotificationLog = require("../entities/NotificationLog");
 const emailSender = require("../channels/email.sender");
 const { logger } = require("../utils/logger");
+const { AppDataSource } = require("../main/db/datasource");
 
 const LOG_STATUS = {
   QUEUED: "queued",

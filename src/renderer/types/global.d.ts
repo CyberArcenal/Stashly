@@ -74,6 +74,24 @@ export interface backendAPI {
   deleteFile: (filePath) => Promise<any>;
   copyFileToClipboard: (filePath) => Promise<any>;
 
+  // 🪟 Window Control
+  windowControl?: (payload: {
+    method: string;
+    params?: Record<string, any>;
+  }) => Promise<{
+    status: boolean;
+    message: string;
+    data?: any;
+  }>;
+
+  // 🪟 Window Events
+  onWindowMaximized?: (callback: () => void) => void;
+  onWindowRestored?: (callback: () => void) => void;
+  onWindowMinimized?: (callback: () => void) => void;
+  onWindowClosed?: (callback: () => void) => void;
+  onWindowResized?: (callback: (bounds: any) => void) => void;
+  onWindowMoved?: (callback: (position: any) => void) => void;
+
   activation: (payload: any) => Promise<any>;
 
   // Events
@@ -89,7 +107,10 @@ export interface backendAPI {
   }>;
 
   // 🎧 Generic event listener (returns cleanup function)
-  on: (channel: string, callback: (event: any, ...args: any[]) => void) => () => void;
+  on: (
+    channel: string,
+    callback: (event: any, ...args: any[]) => void,
+  ) => () => void;
 }
 // Idagdag ang mga interface definitions
 export interface UpdateInfoData {

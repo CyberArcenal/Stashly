@@ -400,7 +400,7 @@ async function createSplashWindow() {
  */
 async function getAppUrl() {
   if (APP_CONFIG.isDev) {
-    const devServerUrl = "http://localhost:5173";
+    const devServerUrl = "http://localhost:3000";
     log(LogLevel.INFO, `Development mode - URL: ${devServerUrl}`);
     return devServerUrl;
   }

@@ -29,7 +29,7 @@
     "src/services/**/*",
     "src/stateTransitionServices/**/*",
     "src/subscribers/**/*",
-    "src/utils/**/*"
+    "src/utils/**/*",
   ],
   "exclude": ["src/renderer", "node_modules", "dist"]
 }

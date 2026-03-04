@@ -22,8 +22,6 @@ const path = require("path");
 const fs = require("fs").promises;
 const fsSync = require("fs");
 const url = require("url");
-// @ts-ignore
-const { autoUpdater } = require("electron-updater");
 
 // TypeORM and Database
 // @ts-ignore
@@ -553,22 +551,6 @@ async function createMainWindow() {
           : "Production build not found or corrupted.",
       );
     }
-
-    // Additional post-load setup
-    mainWindow.webContents.on("did-finish-load", () => {
-      log(LogLevel.INFO, "Main window loaded, checking for updates again");
-
-      // Periodic update check (every 30 minutes)
-      setInterval(
-        () => {
-          checkForUpdates().catch((err) => {
-            log(LogLevel.WARN, "Periodic update check failed", err.message);
-          });
-        },
-        30 * 60 * 1000,
-      );
-    });
-
     return mainWindow;
   } catch (error) {
     throw new WindowError(
@@ -590,94 +572,6 @@ async function handleActivation() {
   return true;
 }
 
-// ===================== AUTO-UPDATER SETUP =====================
-autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = true;
-
-async function checkForUpdates() {
-  try {
-    log(LogLevel.INFO, "Checking for updates...");
-    await autoUpdater.checkForUpdates();
-  } catch (error) {
-    // @ts-ignore
-    log(LogLevel.ERROR, "Update check failed", error.message);
-  }
-}
-
-autoUpdater.on("checking-for-update", () => {
-  log(LogLevel.INFO, "Checking for update...");
-});
-
-// @ts-ignore
-autoUpdater.on("update-available", (info) => {
-  log(LogLevel.INFO, `Update available: ${info.version}`);
-
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.webContents.send("update:available", {
-      version: info.version,
-      releaseDate: info.releaseDate,
-      releaseNotes: info.releaseNotes,
-    });
-  }
-});
-
-// @ts-ignore
-autoUpdater.on("update-not-available", (info) => {
-  log(LogLevel.INFO, "No updates available");
-
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.webContents.send("update:not-available", info);
-  }
-});
-
-// @ts-ignore
-autoUpdater.on("download-progress", (progress) => {
-  log(LogLevel.INFO, `Download progress: ${Math.floor(progress.percent)}%`);
-
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.webContents.send("update:progress", {
-      percent: progress.percent,
-      bytesPerSecond: progress.bytesPerSecond,
-      total: progress.total,
-      transferred: progress.transferred,
-    });
-  }
-});
-
-// @ts-ignore
-autoUpdater.on("update-downloaded", (info) => {
-  log(LogLevel.INFO, `Update downloaded: ${info.version}`);
-
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.webContents.send("update:downloaded", {
-      version: info.version,
-      releaseDate: info.releaseDate,
-      downloadedFile: info.downloadedFile,
-    });
-  }
-
-  const choice = dialog.showMessageBoxSync({
-    type: "question",
-    buttons: ["Install & Restart", "Later"],
-    defaultId: 0,
-    cancelId: 1,
-    title: "Update Ready",
-    message: `Version ${info.version} has been downloaded. Do you want to install it now?`,
-  });
-
-  if (choice === 0) {
-    autoUpdater.quitAndInstall();
-  }
-});
-
-// @ts-ignore
-autoUpdater.on("error", (error) => {
-  log(LogLevel.ERROR, "Update error", error.message);
-
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.webContents.send("update:error", error.message);
-  }
-});
 
 // ===================== IPC HANDLERS =====================
 /**
@@ -767,17 +661,6 @@ function registerIpcHandlers() {
     }
   });
 
-  // Update handlers
-  ipcMain.on("update:start-download", () => {
-    log(LogLevel.INFO, "User requested download");
-    autoUpdater.downloadUpdate();
-  });
-
-  ipcMain.on("update:install-now", () => {
-    log(LogLevel.INFO, "User requested immediate installation");
-    autoUpdater.quitAndInstall();
-  });
-
   // Import modular IPC handlers (inventory-specific)
   try {
     const ipcModules = [
@@ -826,6 +709,7 @@ function registerIpcHandlers() {
       "./ipc/exports/warehouse/index.ipc.js",
       "./ipc/utils/handlers/fileHandler.js",
       "./ipc/core/tax/index.ipc.js",
+      "./ipc/utils/updater/index.ipc.js",
     ];
 
     ipcModules.forEach((modulePath) => {
@@ -915,17 +799,6 @@ async function startupSequence() {
         log(LogLevel.ERROR, "Background stock item initializer failed", err);
       });
     }
-
-    // 8. Early update check (after main window loads)
-    setTimeout(() => {
-      checkForUpdates().catch((err) => {
-        log(
-          LogLevel.WARN,
-          "Update check failed, continuing startup",
-          err.message,
-        );
-      });
-    }, 1000);
 
     log(LogLevel.SUCCESS, `✅ ${APP_CONFIG.appName} started successfully!`);
   } catch (error) {

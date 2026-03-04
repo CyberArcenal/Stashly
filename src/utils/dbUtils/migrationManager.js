@@ -47,7 +47,10 @@ class MigrationManager {
       await fs.mkdir(backupDir, { recursive: true });
 
       // Bumuo ng filename: YYYY-MM-DD_HH-mm-ss.db
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")
+        .slice(0, 19);
       const backupFilename = `db-backup-${timestamp}.db`;
       const backupPath = path.join(backupDir, backupFilename);
 
@@ -70,7 +73,8 @@ class MigrationManager {
   async getMigrationStatus() {
     try {
       // Check if migrations table exists
-      const tableExists = await this.dataSource.query("SELECT 1 FROM migrations LIMIT 1")
+      const tableExists = await this.dataSource
+        .query("SELECT 1 FROM migrations LIMIT 1")
         .then(() => true)
         .catch(() => false);
 
@@ -79,13 +83,15 @@ class MigrationManager {
       }
 
       const pending = await this.dataSource.showMigrations();
-      const executedCount = await this.dataSource.query("SELECT COUNT(*) as count FROM migrations")
-        .then(rows => rows[0].count)
+      const executedCount = await this.dataSource
+        .query("SELECT COUNT(*) as count FROM migrations")
+        .then((rows) => rows[0].count)
         .catch(() => 0);
 
       return {
         // @ts-ignore
         needsMigration: pending.length > 0,
+
         // @ts-ignore
         pending: pending.length,
         executed: executedCount,
@@ -107,19 +113,25 @@ class MigrationManager {
     // 2. Magpadala ng in-app notification tungkol sa backup result
     try {
       if (backupResult.success) {
-        await notificationService.create({
-          title: "Database Backup Successful",
-          message: `Backup created at ${backupResult.path}`,
-          type: "success",
-          metadata: { backupPath: backupResult.path }
-        }, "system");
+        await notificationService.create(
+          {
+            title: "Database Backup Successful",
+            message: `Backup created at ${backupResult.path}`,
+            type: "success",
+            metadata: { backupPath: backupResult.path },
+          },
+          "system",
+        );
       } else {
-        await notificationService.create({
-          title: "Database Backup Failed",
-          message: backupResult.error || "Unknown error",
-          type: "error",
-          metadata: { error: backupResult.error }
-        }, "system");
+        await notificationService.create(
+          {
+            title: "Database Backup Failed",
+            message: backupResult.error || "Unknown error",
+            type: "error",
+            metadata: { error: backupResult.error },
+          },
+          "system",
+        );
       }
     } catch (notifErr) {
       console.error("Failed to send backup notification:", notifErr);
@@ -132,24 +144,30 @@ class MigrationManager {
         transaction: "all", // lahat sa isang transaction para safe
       });
 
-      console.log(`✅ Migration complete! Applied ${result.length} migration(s)`);
+      console.log(
+        `✅ Migration complete! Applied ${result.length} migration(s)`,
+      );
       return {
         success: true,
         applied: result.length,
-        message: "Database updated successfully"
+        message: "Database updated successfully",
       };
     } catch (error) {
       // @ts-ignore
       console.error("❌ Migration failed:", error.message);
 
       // === LIGHT REPAIR: "table already exists" case ===
+
       // @ts-ignore
       if (error.message.includes("already exists")) {
-        console.log("🔧 Detected 'already exists' error. Marking migration as done...");
+        console.log(
+          "🔧 Detected 'already exists' error. Marking migration as done...",
+        );
 
         try {
           // Kunin yung latest pending migration
           const pending = await this.dataSource.showMigrations();
+
           // @ts-ignore
           if (pending.length > 0) {
             // @ts-ignore
@@ -167,7 +185,7 @@ class MigrationManager {
           return {
             success: true,
             repaired: true,
-            message: "Schema already exists. Migration marked as complete."
+            message: "Schema already exists. Migration marked as complete.",
           };
         } catch (repairErr) {
           console.error("Repair failed:", repairErr);
@@ -176,9 +194,10 @@ class MigrationManager {
 
       return {
         success: false,
+
         // @ts-ignore
         error: error.message,
-        message: "Migration failed. Check console/logs."
+        message: "Migration failed. Check console/logs.",
       };
     }
   }

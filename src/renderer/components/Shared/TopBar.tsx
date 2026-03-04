@@ -14,6 +14,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import notificationAPI from "../../api/core/notifications";
 import { NotificationDrawer } from "./NotificationDrawer"; // adjust path as needed
+import UpdateNotifier from "./UpdateNotifier";
 
 interface RouteInfo {
   path: string;
@@ -187,6 +188,7 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
 
         {/* Right side: notifications */}
         <div className="flex items-center gap-md">
+          <UpdateNotifier /> 
           <div className="relative">
             <button
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}

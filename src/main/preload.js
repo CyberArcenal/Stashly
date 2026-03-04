@@ -22,18 +22,19 @@ contextBridge.exposeInMainWorld("backendAPI", {
   outOfStock: (payload) => ipcRenderer.invoke("outOfStock", payload),
   lowStock: (payload) => ipcRenderer.invoke("lowStock", payload),
 
-
   // Product APIs
   category: (payload) => ipcRenderer.invoke("category", payload),
   product: (payload) => ipcRenderer.invoke("product", payload),
-  tax: (payload) => ipcRenderer.invoke('tax', payload),
-  productTaxChange: (payload) => ipcRenderer.invoke("productTaxChange", payload),
+  tax: (payload) => ipcRenderer.invoke("tax", payload),
+  productTaxChange: (payload) =>
+    ipcRenderer.invoke("productTaxChange", payload),
   productVariant: (payload) => ipcRenderer.invoke("productVariant", payload),
   productImage: (payload) => ipcRenderer.invoke("productImage", payload),
   productBulk: (payload) => ipcRenderer.invoke("productBulk", payload),
 
   customer: (payload) => ipcRenderer.invoke("customer", payload),
-  loyaltyTransaction: (payload) => ipcRenderer.invoke("loyaltyTransaction", payload),
+  loyaltyTransaction: (payload) =>
+    ipcRenderer.invoke("loyaltyTransaction", payload),
 
   // Orders
   orderLog: (payload) => ipcRenderer.invoke("orderLog", payload),
@@ -49,7 +50,7 @@ contextBridge.exposeInMainWorld("backendAPI", {
 
   // Notifications
   notification: (payload) => ipcRenderer.invoke("notification", payload),
-  notificationLog:(payload) => ipcRenderer.invoke("notificationLog", payload),
+  notificationLog: (payload) => ipcRenderer.invoke("notificationLog", payload),
 
   // Supplier & warehouse
   supplier: (payload) => ipcRenderer.invoke("supplier", payload),
@@ -73,7 +74,8 @@ contextBridge.exposeInMainWorld("backendAPI", {
   outOfStockExport: (payload) =>
     ipcRenderer.invoke("outOfStockExport", payload),
   productExport: (payload) => ipcRenderer.invoke("productExport", payload),
-  variantExport: (payload) => ipcRenderer.invoke("productVariantExport", payload),
+  variantExport: (payload) =>
+    ipcRenderer.invoke("productVariantExport", payload),
   profitLossExport: (payload) =>
     ipcRenderer.invoke("profitLossExport", payload),
   purchaseExport: (payload) => ipcRenderer.invoke("purchaseExport", payload),
@@ -103,20 +105,11 @@ contextBridge.exposeInMainWorld("backendAPI", {
   // Activation
   activation: (payload) => ipcRenderer.invoke("activation", payload),
 
-  // Update APIs
-  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
-  startUpdateDownload: () => ipcRenderer.invoke("start-update-download"),
-  startUpdate: () => ipcRenderer.send("update:install-now"),
-  startDownload: () => ipcRenderer.send("update:start-download"),
-
-  // Update event listeners
-  onUpdateAvailable: (callback) => ipcRenderer.on("update:available", callback),
-  onDownloadProgress: (callback) => ipcRenderer.on("update:progress", callback),
-  onUpdateDownloaded: (callback) =>
-    ipcRenderer.on("update:downloaded", callback),
-  onUpdateError: (callback) => ipcRenderer.on("update:error", callback),
-  onUpdateNotAvailable: (callback) =>
-    ipcRenderer.on("update:not-available", callback),
+  updater: (payload) => ipcRenderer.invoke("updater", payload),
+  on: (event, callback) => {
+    ipcRenderer.on(event, callback);
+    return () => ipcRenderer.removeListener(event, callback);
+  },
 });
 
 console.log("✅ Preload script aligned with global.d.ts");

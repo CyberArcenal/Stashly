@@ -81,25 +81,15 @@ export interface backendAPI {
   onActivationDeactivated: (callback: () => void) => void;
   onLicenseSynced: (callback: (data: any) => void) => void;
 
-  startDownload: () => (payload: any) => Promise<any>;
+  // 🆕 Updater API (invoke)
+  updater: (payload: { method: string; params?: any }) => Promise<{
+    status: boolean;
+    message: string;
+    data: any;
+  }>;
 
-  // Update APIs
-  checkForUpdates: () => Promise<any>;
-  startUpdateDownload: () => Promise<any>;
-  startUpdate: () => void;
-
-  // Update event listeners
-  onUpdateAvailable: (
-    callback: (event: any, data: UpdateInfoData) => void
-  ) => void;
-  onDownloadProgress: (
-    callback: (event: any, data: ProgressInfoData) => void
-  ) => void;
-  onUpdateDownloaded: (
-    callback: (event: any, data: DownloadedInfoData) => void
-  ) => void;
-  onUpdateError: (callback: (event: any, error: string) => void) => void;
-  onUpdateNotAvailable: (callback: () => void) => void;
+  // 🎧 Generic event listener (returns cleanup function)
+  on: (channel: string, callback: (event: any, ...args: any[]) => void) => () => void;
 }
 // Idagdag ang mga interface definitions
 export interface UpdateInfoData {

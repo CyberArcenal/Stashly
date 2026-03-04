@@ -1,6 +1,6 @@
 {
   "name": "stashify",
-  "version": "v0.0.2-beta",
+  "version": "v0.0.4-beta",
   "private": true,
   "main": "src/main/index.js",
   "author": {
@@ -23,7 +23,7 @@
     "migration:run": "npx typeorm migration:run -d src/main/db/datasource.js",
     "migration:revert": "npx typeorm migration:revert -d src/main/db/datasource.js",
     "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"tsc -w -p tsconfig.node.json\" \"electron ./src/main/index.js\"",
-    "build": "vite build && electron-builder",
+    "build": "vite build && electron-builder --publish neverr",
     "dist:win": "vite build && electron-builder --win",
     "dist:mac": "vite build && electron-builder --mac",
     "dist:linux": "vite build && electron-builder --linux",
@@ -33,7 +33,7 @@
     "rebuild": "electron-rebuild -f -w sqlite3"
   },
   "build": {
-    "appId": "com.CyberArcenal",
+    "appId": "com.CyberArcenal.stashify.app",
     "productName": "Stashify",
     "directories": {
       "output": "release"
@@ -53,7 +53,12 @@
         "deb"
       ]
     },
-    "publish": null
+    "publish": {
+      "provider": "github",
+      "owner": "CyberArcenal",
+      "repo": "Stashify",
+      "releaseType": "release"
+    }
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -1,6 +1,6 @@
 {
   "name": "stashify",
-  "version": "v0.0.4-beta",
+  "version": "v0.0.5-beta",
   "private": true,
   "main": "src/main/index.js",
   "author": {
@@ -40,18 +40,21 @@
     },
     "win": {
       "icon": "build/icon.ico",
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
       "icon": "build/icon.icns",
-      "target": "dmg"
+      "target": "dmg",
+      "artifactName": "${productName}-${version}.${ext}"
     },
     "linux": {
       "icon": "build/icon.png",
       "target": [
         "AppImage",
         "deb"
-      ]
+      ],
+      "artifactName": "${productName}-${version}.${ext}"
     },
     "publish": {
       "provider": "github",

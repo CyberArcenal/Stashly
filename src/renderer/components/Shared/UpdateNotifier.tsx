@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Download, RefreshCw, X, AlertCircle } from 'lucide-react';
 import { useUpdater } from '../../hooks/useUpdater';
+import Button from '../UI/Button';
 
 const UpdateNotifier: React.FC = () => {
   const { state, updateInfo, progress, error, downloadUpdate, installUpdate } = useUpdater();
@@ -105,21 +106,21 @@ const UpdateNotifier: React.FC = () => {
                 </button>
               )}
               {state === 'downloaded' && (
-                <button
+                <Button
                   onClick={() => {
                     installUpdate();
                   }}
                   className="btn-success btn-sm px-4 py-2"
                 >
                   Install & Restart
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 onClick={() => setShowModal(false)}
                 className="btn-secondary btn-sm px-4 py-2"
               >
                 Later
-              </button>
+              </Button>
             </div>
           </div>
         </div>

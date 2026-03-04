@@ -551,6 +551,14 @@ async function createMainWindow() {
           : "Production build not found or corrupted.",
       );
     }
+
+    try {
+      const updaterModule = require("./ipc/utils/updater/index.ipc.js");
+      updaterModule.setMainWindow(mainWindow);
+      log(LogLevel.INFO, "Updater handler attached to main window");
+    } catch (e) {
+      log(LogLevel.WARN, "Failed to set updater main window", e);
+    }
     return mainWindow;
   } catch (error) {
     throw new WindowError(
@@ -571,7 +579,6 @@ async function handleActivation() {
   // For now, just return true to continue
   return true;
 }
-
 
 // ===================== IPC HANDLERS =====================
 /**

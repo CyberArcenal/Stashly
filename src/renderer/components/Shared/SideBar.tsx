@@ -43,7 +43,8 @@ import {
   Percent,
   Logs,
 } from "lucide-react";
-import { version } from "../../../../package.json";
+import { version, name } from "../../../../package.json";
+import { useGeneralSettings } from "../../utils/configUtils/general";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -56,9 +57,16 @@ interface MenuItem {
   category?: string;
   children?: MenuItem[];
 }
-
+export function toTitleCase(str: string) {
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
+  );
+}
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const location = useLocation();
+  const title = toTitleCase(name);
+  const {currency} = useGeneralSettings();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(
     {},
   );
@@ -396,12 +404,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           {isOpen && (
             <div className="min-w-0">
               <h2 className="truncate text-lg font-bold text-[var(--sidebar-text)]">
-                Stashify
+                {title}
               </h2>
               <p className="text-xs text-[var(--sidebar-text)]">
                 Business Management
               </p>
-              <p className="text-xs text-[var(--sidebar-text)]">PHP</p>
+              <p className="text-xs text-[var(--sidebar-text)]">{currency}</p>
             </div>
           )}
         </div>
@@ -432,7 +440,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       <div className="p-4 border-t border-[var(--sidebar-border)] text-center flex-shrink-0">
         {isOpen ? (
           <p className="text-xs text-[var(--sidebar-text)]">
-            v{version} • © {new Date().getFullYear()} Stashify
+            {version} • © {new Date().getFullYear()} Stashify
           </p>
         ) : (
           <p className="text-xs text-[var(--sidebar-text)]">

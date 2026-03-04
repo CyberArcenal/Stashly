@@ -95,7 +95,7 @@ const UpdateNotifier: React.FC = () => {
 
             <div className="flex gap-3 justify-end">
               {state === 'available' && (
-                <button
+                <Button
                   onClick={() => {
                     downloadUpdate();
                     // Keep modal open to show progress
@@ -103,7 +103,7 @@ const UpdateNotifier: React.FC = () => {
                   className="btn-primary btn-sm px-4 py-2"
                 >
                   Download Update
-                </button>
+                </Button>
               )}
               {state === 'downloaded' && (
                 <Button

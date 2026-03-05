@@ -20,7 +20,8 @@
       "@/types/*": ["src/renderer/types/*"],
       "@/utils/*": ["src/renderer/utils/*"],
       "@/services/*": ["src/renderer/services/*"],
-      "@/hooks/*": ["src/renderer/hooks/*"]
+      "@/hooks/*": ["src/renderer/hooks/*"],
+      "@/assets/*": ["src/renderer/assets/*"]
     }
   }
 }

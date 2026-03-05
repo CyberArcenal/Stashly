@@ -1,7 +1,6 @@
 // components/Sidebar.tsx
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-
 import {
   LayoutDashboard,
   Package,
@@ -396,8 +395,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
             <img
-              src={"/icon.png"}
-              alt="Inventory Pro Logo"
+              src={"./icon.png"}
+              alt="Stashify Logo"
               className="h-full w-full object-cover"
             />
           </div>
